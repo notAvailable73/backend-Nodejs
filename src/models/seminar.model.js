@@ -1,34 +1,32 @@
 import mongoose from "mongoose";
 
-const questionTranslationSchema = new mongoose.Schema({
+const seminarTranslationSchema = new mongoose.Schema({
     language: {
         type: String,
         required: true,
         enum: ['en','bn','ar'],
         lowercase: true
     },
-    title: {
+    heading: {
         type: String,
         required: true,
         trim: true 
     },
     description: {
-        type: String,
-        required: true,
+        type: String, 
         trim: true, 
     }, 
-    tags: {
-        type: [String],
+    time: {
+        type: String,
         required: true
     },
-    answer: [{
+    place: {
         type: String,
-        default: null
-    }]
+        required: true
+    },
 });
-
-const questionSchema = new mongoose.Schema({
-    translations: [questionTranslationSchema],
+const seminarSchema = new mongoose.Schema({
+    translations: [seminarTranslationSchema],
     isFeatured: {
         type: Boolean,
         default: false
@@ -38,4 +36,4 @@ const questionSchema = new mongoose.Schema({
 });
 
 
-export const Question = mongoose.model('Question', questionSchema);
+export const seminar = mongoose.model('Seminar', seminarSchema);

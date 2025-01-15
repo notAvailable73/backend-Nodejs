@@ -1,7 +1,6 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser";
- 
 const app = express();
 
 // Middleware
@@ -12,9 +11,10 @@ app.use(express.static("public"))
 
 
 // Routes import 
+import QuestionRoute from "./routes/question.route.js";
 
 // Routes declaration 
-
+app.use("/api/v1/questions", QuestionRoute);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
