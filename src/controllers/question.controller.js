@@ -29,10 +29,57 @@ const createQuestion = asyncHandler(async (req, res) => {
     const errorResponse = new ApiError(
       error.statusCode || 500,
       error.errors || error,
-      error.message || "Error occured while adding product to cart"
+      error.message || "Error occured while adding question"
     );
     errorResponse.send(res);
   }
 });
 
-export { createQuestion };
+
+const getQuestionsbyTags = asyncHandler(async (req, res) => {
+  try {
+    const { tags } = req.query;  
+    
+    let query = {};
+     
+    if (tags) { 
+      const tagArray = Array.isArray(tags) ? tags : tags.split(',');
+      query.tags = { $in: tagArray };
+    }
+ 
+    const questions = await Question.find(query)
+      .select('-__v') // Exclude version key
+      .sort({ createdAt: -1 }); // Sort by newest first
+    
+    // If no questions found
+    if (!questions || questions.length === 0) {
+      throw new ApiError(
+        404,
+        tags ? 'No questions found with the specified tags' : 'No questions found',
+        null 
+      ) 
+    }
+
+    // Return success response 
+    return new ApiResponse(
+      200,
+      {
+        count: questions.length,
+        questions
+      },
+      "Question Added Successfully"
+    ).send(res);
+
+  } catch (error) {
+    console.log(error);
+    const errorResponse = new ApiError(
+      error.statusCode || 500,
+      error.errors || error,
+      error.message || "Error occured while fetching questions"
+    );
+    errorResponse.send(res);
+  }
+});
+
+
+export { createQuestion,getQuestionsbyTags };

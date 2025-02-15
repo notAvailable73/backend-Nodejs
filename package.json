@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A backend project for Jamia as suffah",
   "main": "server.js",
-  "type" : "module",
+  "type": "module",
   "scripts": {
     "dev": "nodemon ./src/server.js"
   },
@@ -18,11 +18,13 @@
   },
   "homepage": "https://github.com/suffahUniversity/backend-Nodejs#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.0",
     "cloudinary": "^2.5.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.4",
     "multer": "^1.4.5-lts.1"
   },

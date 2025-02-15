@@ -17,10 +17,6 @@ const questionTranslationSchema = new mongoose.Schema({
         required: true,
         trim: true, 
     }, 
-    tags: {
-        type: [String],
-        required: true
-    },
     answer: [{
         type: String,
         default: null
@@ -33,6 +29,11 @@ const questionSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    
+    tags: {
+        type: [String],
+        required: true
+    }
 }, {
     timestamps: true
 });
