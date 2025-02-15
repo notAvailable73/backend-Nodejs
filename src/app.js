@@ -12,6 +12,9 @@ import QuestionRoute from "./routes/question.route.js";
 import authRoute from "./routes/auth.routes.js";
 import protectedRoute from "./routes/protected.routes.js";
 // Routes declaration 
+app.use("/", (req, res) => {
+    res.json({ message: "Welcome to the Jamia API" });
+});
 app.use("/api/v1/questions", QuestionRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/protected-route", protectedRoute);
