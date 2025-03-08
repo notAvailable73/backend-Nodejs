@@ -37,11 +37,24 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     const token = user.getJwtToken();
+
+    
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     return new ApiResponse(200, { user, token }, "Login successful").send(res);
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-    res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production" });
+    res.clearCookie("token", 
+        { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === "production" 
+    });
     return new ApiResponse(200, null, "Logout successful").send(res);
 });
 

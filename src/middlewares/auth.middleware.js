@@ -3,7 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export const isAuthenticated = async (req, res, next) => {
-    const token = req.header("Authorization")?.split(" ")[1];
+    const token = req.cookies.token;
 
     if (!token) {
         throw new ApiError(401, "Unauthorized", "No token provided");
