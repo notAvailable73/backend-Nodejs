@@ -30,44 +30,52 @@ const createQuestion = asyncHandler(async (req, res) => {
       error.statusCode || 500,
       error.errors || error,
       error.message || "Error occured while adding question"
-    );
+    ); 
     errorResponse.send(res);
   }
 });
 
-
-const getQuestionsbyTags = asyncHandler(async (req, res) => {
+const getQuestions = asyncHandler(async (req, res) => {
+  console.log("Fetching questions");
+  
   try {
-    const { tags } = req.query;  
+    const { tags, search } = req.query;
     
     let query = {};
-     
+
+    // Handle tag filtering
     if (tags) { 
       const tagArray = Array.isArray(tags) ? tags : tags.split(',');
       query.tags = { $in: tagArray };
     }
- 
+
+    // Handle search filtering
+    if (search) {
+      query['translations.title'] = { $regex: search, $options: 'i' }; // Case-insensitive search in title
+    }
+
+    // Fetch questions
     const questions = await Question.find(query)
       .select('-__v') // Exclude version key
-      .sort({ createdAt: -1 }); // Sort by newest first
-    
+      .sort({ createdAt: -1 }); // Sort by latest
+
     // If no questions found
     if (!questions || questions.length === 0) {
       throw new ApiError(
         404,
-        tags ? 'No questions found with the specified tags' : 'No questions found',
+        search ? `No questions found matching "${search}"` : 'No questions found',
         null 
-      ) 
+      ); 
     }
 
-    // Return success response 
+    // Return response
     return new ApiResponse(
       200,
       {
         count: questions.length,
         questions
       },
-      "Question Added Successfully"
+      "Questions fetched successfully"
     ).send(res);
 
   } catch (error) {
@@ -75,11 +83,11 @@ const getQuestionsbyTags = asyncHandler(async (req, res) => {
     const errorResponse = new ApiError(
       error.statusCode || 500,
       error.errors || error,
-      error.message || "Error occured while fetching questions"
+      error.message || "Error occurred while fetching questions"
     );
-    errorResponse.send(res);
+    errorResponse.send(res); 
   }
 });
 
 
-export { createQuestion,getQuestionsbyTags };
+export { createQuestion,getQuestions };

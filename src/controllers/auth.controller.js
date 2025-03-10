@@ -40,13 +40,14 @@ const loginUser = asyncHandler(async (req, res) => {
         const token = user.getJwtToken();
     
         
-        // // Set token in HTTP-only cookie
-        // res.cookie("token", token, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === "production",
-        //     sameSite: "None",
-        //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        // });
+        // Set token in HTTP-only cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "None",
+            secure: true,
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
         console.log("Sending response:", JSON.stringify({ user, token }, null, 2));
         return new ApiResponse(200, { user, token }, "Login successful").send(res);
         
@@ -70,4 +71,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     return new ApiResponse(200, null, "Logout successful").send(res);
 });
 
-export { registerUser, loginUser, logoutUser };
+
+const getProfile = asyncHandler(async (req, res) => {
+    const user = req.user;
+    return new ApiResponse(200, user, "User profile retrieved successfully").send(res);
+});
+
+
+export { registerUser, loginUser, logoutUser,getProfile };

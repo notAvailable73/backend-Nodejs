@@ -6,7 +6,7 @@ export const isAuthenticated = async (req, res, next) => {
     const token = req.cookies.token;
 
     if (!token) {
-        throw new ApiError(401, "Unauthorized", "No token provided");
+        return new ApiError(401, "Unauthorized", "No token provided");
     }
 
     try {
