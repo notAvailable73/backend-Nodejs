@@ -4,7 +4,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-    console.log(req.body);
     const { name, email, password } = req.body;
 
     if ([name, email, password].some(field => field?.trim() === "")) {
@@ -48,7 +47,6 @@ const loginUser = asyncHandler(async (req, res) => {
             secure: true,
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
-        console.log("Sending response:", JSON.stringify({ user, token }, null, 2));
         return new ApiResponse(200, { user, token }, "Login successful").send(res);
         
     } catch (error) {

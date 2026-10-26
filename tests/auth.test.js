@@ -1,6 +1,8 @@
+import { jest } from "@jest/globals";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import { app } from "../src/app.js";
+import { User } from "../src/models/user.model.js";
 import { connect, clear, disconnect } from "./helpers/db.js";
 
 // Requests that never get a response are cut off after this many ms
@@ -26,9 +28,11 @@ describe("POST /api/auth/register", () => {
     });
 
     test("stores the password hashed", async () => {
-        const res = await register();
+        await register();
 
-        expect(res.body.data.user.password).not.toBe(user.password);
+        const stored = await User.findOne({ email: user.email });
+        expect(stored.password).not.toBe(user.password);
+        expect(stored.password).toMatch(/^\$2[aby]\$10\$/);
     });
 
     // Known bug: the ApiError thrown inside asyncHandler reaches the global error
@@ -39,12 +43,49 @@ describe("POST /api/auth/register", () => {
 
         expect(res.status).toBe(400);
     });
+});
 
-    // Known bug: the hashed password is returned to the client
-    test.failing("does not expose the password hash", async () => {
+// CM-PRE-01: credentials must not leave the server through responses or logs
+describe("credential exposure", () => {
+    let logged;
+
+    beforeEach(() => {
+        logged = [];
+        for (const level of ["log", "info", "warn", "error"]) {
+            jest.spyOn(console, level).mockImplementation((...args) => {
+                logged.push(args.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg))).join(" "));
+            });
+        }
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    test("registration does not return the password hash", async () => {
         const res = await register();
 
         expect(res.body.data.user).not.toHaveProperty("password");
+    });
+
+    test("login does not return the password hash", async () => {
+        await register();
+        const res = await login();
+
+        expect(res.body.data.user).not.toHaveProperty("password");
+    });
+
+    test("registration does not log the plaintext password", async () => {
+        await register();
+
+        expect(logged.join("\n")).not.toContain(user.password);
+    });
+
+    test("login does not log the token or the password hash", async () => {
+        await register();
+        const res = await login();
+
+        const output = logged.join("\n");
+        expect(output).not.toContain(res.body.data.token);
+        expect(output).not.toMatch(/\$2[aby]\$10\$/);
     });
 });
 

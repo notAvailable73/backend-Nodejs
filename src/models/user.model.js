@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Never serialize the password hash, whichever route returns a user
+userSchema.set("toJSON", {
+    transform: (doc, ret) => {
+        delete ret.password;
+        return ret;
+    },
+});
+
 // Hash password before saving user
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
