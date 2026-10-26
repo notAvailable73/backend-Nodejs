@@ -92,6 +92,14 @@ describe("GET /api/questions", () => {
         const res = await request(app).get("/api/questions");
 
         expect(res.status).toBe(404);
+        expect(res.body).toMatchObject({ success: false, message: "No questions found" });
+    });
+
+    test("names the search term in the 404 message", async () => {
+        const res = await request(app).get("/api/questions?search=zakat");
+
+        expect(res.status).toBe(404);
+        expect(res.body.message).toBe('No questions found matching "zakat"');
     });
 
     // Known bug: a question created through the API is never found by its tag

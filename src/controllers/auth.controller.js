@@ -24,40 +24,28 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        console.log(email);
-        if ([email, password].some(field => field?.trim() === "")) {
-            throw new ApiError(400, "All fields are required", "Email and password are required for login");
-        }
-    
-        const user = await User.findOne({ email });
-        if (!user || !(await user.comparePassword(password))) {
-            throw new ApiError(401, "Invalid credentials", "Incorrect email or password");
-        }
-    
-        const token = user.getJwtToken();
-    
-        
-        // Set token in HTTP-only cookie
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "None",
-            secure: true,
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-        return new ApiResponse(200, { user, token }, "Login successful").send(res);
-        
-    } catch (error) {
-        console.log(error);
-        const errorResponse = new ApiError(
-          error.statusCode || 500,
-          error.errors || error,
-          error.message || "Error occured while logging in"
-        );
-        errorResponse.send(res);
-      }
+    const { email, password } = req.body;
+    console.log(email);
+    if ([email, password].some(field => field?.trim() === "")) {
+        throw new ApiError(400, "All fields are required", "Email and password are required for login");
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+        throw new ApiError(401, "Invalid credentials", "Incorrect email or password");
+    }
+
+    const token = user.getJwtToken();
+
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "None",
+        secure: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    return new ApiResponse(200, { user, token }, "Login successful").send(res);
 });
 
 const logoutUser = asyncHandler(async (req, res) => {

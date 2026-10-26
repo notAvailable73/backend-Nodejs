@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser";
+import { ApiError } from "./utils/ApiError.js";
 const app = express(); 
 app.use(cors()); 
 app.use(express.json());  
@@ -18,10 +19,13 @@ import protectedRoute from "./routes/protected.routes.js";
 app.use("/api/questions", QuestionRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/protected-route", protectedRoute);
-// Error Handling Middleware
+// Error Handling Middleware: the single place where errors become responses
 app.use((err, req, res, next) => {
+    if (err instanceof ApiError) {
+        return err.send(res);
+    }
     console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+    new ApiError(500, [], 'Something went wrong!').send(res);
 });
 
 export {app}

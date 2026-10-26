@@ -35,13 +35,18 @@ describe("POST /api/auth/register", () => {
         expect(stored.password).toMatch(/^\$2[aby]\$10\$/);
     });
 
-    // Known bug: the ApiError thrown inside asyncHandler reaches the global error
-    // handler in app.js, which ignores statusCode and always answers 500
-    test.failing("rejects a duplicate email with 400", async () => {
+    // CM-PER-01: before the change the global error handler ignored
+    // ApiError.statusCode and answered 500
+    test("rejects a duplicate email with 400", async () => {
         await register();
         const res = await register();
 
         expect(res.status).toBe(400);
+        expect(res.body).toEqual({
+            success: false,
+            message: "A user with this email already exists",
+            errors: "User already exists",
+        });
     });
 });
 
@@ -104,7 +109,11 @@ describe("POST /api/auth/login", () => {
         const res = await login({ email: user.email, password: "wrong-password" });
 
         expect(res.status).toBe(401);
-        expect(res.body.success).toBe(false);
+        expect(res.body).toEqual({
+            success: false,
+            message: "Incorrect email or password",
+            errors: "Invalid credentials",
+        });
     });
 
     test("rejects an unknown email with 401", async () => {
