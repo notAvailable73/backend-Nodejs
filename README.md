@@ -4,9 +4,7 @@ Express + MongoDB API for Jamia as-Suffah.
 
 ## Requirements
 
-- Node.js 24 (`nvm use` reads `.nvmrc`). Node 25+ does not work yet:
-  `jsonwebtoken` pulls in `buffer-equal-constant-time`, which relies on the
-  `SlowBuffer` API removed in Node 25.
+- Node.js 20 or newer; developed on Node 26 (`nvm use` reads `.nvmrc`).
 - Docker, for the local MongoDB.
 
 ## Local setup
