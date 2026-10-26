@@ -1,6 +1,6 @@
+import jwt from "jsonwebtoken";
 import request from "supertest";
 import { app } from "../src/app.js";
-import { isAuthenticated } from "../src/middlewares/auth.middleware.js";
 import { connect, clear, disconnect } from "./helpers/db.js";
 
 // Requests that never get a response are cut off after this many ms
@@ -85,24 +85,30 @@ describe("GET /api/auth/profile", () => {
         expect(res.body.data).not.toHaveProperty("password");
     });
 
-    // Known bug: isAuthenticated returns an ApiError instead of sending it,
-    // so the request never gets a response
-    test.failing("rejects a request without a token with 401", async () => {
+    // CM-COR-01: before the fix this request never got a response
+    test("rejects a request without a token with 401", async () => {
         const res = await request(app).get("/api/auth/profile").timeout(HANG_TIMEOUT);
 
         expect(res.status).toBe(401);
+        expect(res.body.message).toBe("No token provided");
     });
 
-    // Known bug: isAuthenticated throws inside an async middleware. Express 4 does
-    // not catch the rejected promise, so it becomes an unhandled rejection, which
-    // terminates the Node process: one bad cookie takes the whole server down.
-    // Called directly because Jest would report the stray rejection against
-    // whichever test happens to be running.
-    test.failing("handles an invalid token without rejecting", async () => {
-        const req = { cookies: { token: "not-a-jwt" } };
-        const res = { status: () => res, json: () => res };
+    // CM-COR-01: before the fix these requests terminated the Node process
+    test.each([
+        ["malformed", () => "not-a-jwt"],
+        ["signed with another secret", () => jwt.sign({ id: "x" }, "another-secret")],
+        [
+            "expired",
+            () => jwt.sign({ id: "x", exp: Math.floor(Date.now() / 1000) - 60 }, process.env.JWT_SECRET),
+        ],
+    ])("rejects a %s token with 401", async (_, makeToken) => {
+        const res = await request(app)
+            .get("/api/auth/profile")
+            .set("Cookie", `token=${makeToken()}`)
+            .timeout(HANG_TIMEOUT);
 
-        await isAuthenticated(req, res, () => {});
+        expect(res.status).toBe(401);
+        expect(res.body.message).toBe("Invalid or expired token");
     });
 });
 
