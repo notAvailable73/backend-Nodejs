@@ -1,0 +1,39 @@
+# jamiya-backend
+
+Express + MongoDB API for Jamia as-Suffah.
+
+## Requirements
+
+- Node.js 24 (`nvm use` reads `.nvmrc`). Node 25+ does not work yet:
+  `jsonwebtoken` pulls in `buffer-equal-constant-time`, which relies on the
+  `SlowBuffer` API removed in Node 25.
+- Docker, for the local MongoDB.
+
+## Local setup
+
+```sh
+nvm use
+npm ci
+cp .env.example .env      # then set JWT_SECRET, e.g. openssl rand -hex 32
+npm run db:up             # MongoDB 7.0 on 127.0.0.1:27017
+npm run dev
+```
+
+MongoDB is pinned to 7.0.45: the 8.x images refuse to start on Linux
+kernel 6.19+ (SERVER-121912).
+
+## Tests
+
+```sh
+npm test
+```
+
+Jest + supertest against the `jamiya_test` database (`MONGODB_URI_TEST`),
+which is wiped between tests. Needs the database from `npm run db:up`.
+
+Tests marked `test.failing` document known bugs: they pass while the bug
+exists. Once a bug is fixed, its test starts failing; switch it to `test`.
+
+## Baseline
+
+The `baseline` tag marks the project as it was before the maintenance work.

@@ -6,7 +6,13 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon ./src/server.js",
-    "start": "node ./src/server.js"
+    "start": "node ./src/server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20 <25"
   },
   "repository": {
     "type": "git",
@@ -30,6 +36,8 @@
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "jest": "30.5.2",
+    "nodemon": "^3.1.9",
+    "supertest": "7.3.1"
   }
 }
