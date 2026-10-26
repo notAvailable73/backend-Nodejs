@@ -1,0 +1,34 @@
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/[22m[1mauth.test.js[22m
+  POST /api/auth/register
+    [32m✓[39m [2mcreates a user and returns a JWT (133 ms)[22m
+    [32m✓[39m [2mstores the password hashed (75 ms)[22m
+    [32m✓[39m [2mrejects a duplicate email with 400 (78 ms)[22m
+    [32m✓[39m [2mdoes not expose the password hash (72 ms)[22m
+  POST /api/auth/login
+    [32m✓[39m [2mreturns a JWT and sets it as an HTTP-only cookie (140 ms)[22m
+    [32m✓[39m [2mrejects a wrong password with 401 (140 ms)[22m
+    [32m✓[39m [2mrejects an unknown email with 401 (73 ms)[22m
+  GET /api/auth/profile
+    [32m✓[39m [2mreturns the logged-in user without the password (142 ms)[22m
+    [32m✓[39m [2mrejects a request without a token with 401 (1505 ms)[22m
+    [32m✓[39m [2mhandles an invalid token without rejecting (1 ms)[22m
+  POST /api/auth/logout
+    [32m✓[39m [2mclears the token cookie (145 ms)[22m
+
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/[22m[1mquestions.test.js[22m
+  POST /api/questions/add
+    [32m✓[39m [2mcreates a question with one translation (46 ms)[22m
+    [32m✓[39m [2mstores the tags on the question (11 ms)[22m
+    [32m✓[39m [2mrejects a missing title with 400 (6 ms)[22m
+  GET /api/questions
+    [32m✓[39m [2mlists questions, newest first (15 ms)[22m
+    [32m✓[39m [2mfilters by tag (7 ms)[22m
+    [32m✓[39m [2msearches titles case-insensitively (6 ms)[22m
+    [32m✓[39m [2manswers 404 when nothing matches (3 ms)[22m
+    [32m✓[39m [2mfinds a question created through the API by its tag (6 ms)[22m
+    [32m✓[39m [2mtreats regex characters in the search term literally (6 ms)[22m
+
+[1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 total
+[1mTests:       [22m[1m[32m20 passed[39m[22m, 20 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        3.299 s, estimated 5 s

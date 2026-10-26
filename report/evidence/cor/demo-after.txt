@@ -1,0 +1,27 @@
+$ node src/server.js &
+
+$ curl http://127.0.0.1:5055/api/auth/profile
+{
+  "success": false,
+  "message": "No token provided",
+  "errors": "Unauthorized"
+}
+[HTTP 401]
+
+$ curl --cookie token=not-a-jwt http://127.0.0.1:5055/api/auth/profile
+{
+  "success": false,
+  "message": "Invalid or expired token",
+  "errors": "Unauthorized"
+}
+[HTTP 401]
+
+$ kill -0 $SERVER_PID   # is the server process still running?
+yes, still running
+
+--- server output ---
+✅ MongoDB connected successfully
+🚀 MongoDB Connected!
+🚀 Server is running at port: 5055
+
+                Link: http://localhost:5055

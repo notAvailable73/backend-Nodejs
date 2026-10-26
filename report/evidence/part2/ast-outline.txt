@@ -1,0 +1,75 @@
+ArrowFunctionExpression async  L5
+  Identifier req  L5
+  Identifier res  L5
+  Identifier next  L5
+  BlockStatement  L5
+    VariableDeclaration const  L6
+      VariableDeclarator  L6
+        Identifier token  L6
+        MemberExpression  L6
+          MemberExpression  L6
+            Identifier req  L6
+            Identifier cookies  L6
+          Identifier token  L6
+    IfStatement  L8
+      UnaryExpression !  L8
+        Identifier token  L8
+      BlockStatement  L8
+        ReturnStatement  L9
+          CallExpression  L9
+            MemberExpression  L9
+              NewExpression  L9
+                Identifier ApiError  L9
+                Literal 401  L9
+                Literal "Unauthorized"  L9
+                Literal "No token provided"  L9
+              Identifier send  L9
+            Identifier res  L9
+    TryStatement  L12
+      BlockStatement  L12
+        VariableDeclaration const  L13
+          VariableDeclarator  L13
+            Identifier decoded  L13
+            CallExpression  L13
+              MemberExpression  L13
+                Identifier jwt  L13
+                Identifier verify  L13
+              Identifier token  L13
+              MemberExpression  L13
+                MemberExpression  L13
+                  Identifier process  L13
+                  Identifier env  L13
+                Identifier JWT_SECRET  L13
+        ExpressionStatement  L14
+          AssignmentExpression =  L14
+            MemberExpression  L14
+              Identifier req  L14
+              Identifier user  L14
+            AwaitExpression  L14
+              CallExpression  L14
+                MemberExpression  L14
+                  CallExpression  L14
+                    MemberExpression  L14
+                      Identifier User  L14
+                      Identifier findById  L14
+                    MemberExpression  L14
+                      Identifier decoded  L14
+                      Identifier id  L14
+                  Identifier select  L14
+                Literal "-password"  L14
+      CatchClause  L15
+        Identifier error  L15
+        BlockStatement  L15
+          ReturnStatement  L16
+            CallExpression  L16
+              MemberExpression  L16
+                NewExpression  L16
+                  Identifier ApiError  L16
+                  Literal 401  L16
+                  Literal "Unauthorized"  L16
+                  Literal "Invalid or expired token"  L16
+                Identifier send  L16
+              Identifier res  L16
+    ExpressionStatement  L18
+      CallExpression  L18
+        Identifier next  L18

@@ -1,0 +1,64 @@
+$ node src/server.js &
+
+$ curl -X POST http://127.0.0.1:5055/api/auth/register -d '{"name":"Demo User","email":"demo@example.com","password":"secret123"}'
+{
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "name": "Demo User",
+      "email": "demo@example.com",
+      "password": "$2b$10$r3NjP9OZPqP/cGRjkE9vb.GPbcTbVbEchsCdbl1EbT.0lw8L.8c3u",
+      "role": "user",
+      "askedQuestions": [],
+      "_id": "6adf4ad0047a1be11a7518e3",
+      "createdAt": "2026-10-26T12:42:57.003Z",
+      "updatedAt": "2026-10-26T12:42:57.003Z",
+      "__v": 0
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQwMDQ3YTFiZTExYTc1MThlMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTc3LCJleHAiOjE3OTM2MjMzNzd9.X8YqrAxkMRrdTB2Qyg861J0cHAVdA3dxgRlPyTit3h4"
+  }
+}
+[HTTP 201]
+
+$ curl -X POST http://127.0.0.1:5055/api/auth/login -d '{"email":"demo@example.com","password":"secret123"}'
+{
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "_id": "6adf4ad0047a1be11a7518e3",
+      "name": "Demo User",
+      "email": "demo@example.com",
+      "password": "$2b$10$r3NjP9OZPqP/cGRjkE9vb.GPbcTbVbEchsCdbl1EbT.0lw8L.8c3u",
+      "role": "user",
+      "askedQuestions": [],
+      "createdAt": "2026-10-26T12:42:57.003Z",
+      "updatedAt": "2026-10-26T12:42:57.003Z",
+      "__v": 0
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQwMDQ3YTFiZTExYTc1MThlMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTc3LCJleHAiOjE3OTM2MjMzNzd9.X8YqrAxkMRrdTB2Qyg861J0cHAVdA3dxgRlPyTit3h4"
+  }
+}
+[HTTP 200]
+
+--- server output ---
+✅ MongoDB connected successfully
+🚀 MongoDB Connected!
+🚀 Server is running at port: 5055
+
+                Link: http://localhost:5055
+{ name: [32m'Demo User'[39m, email: [32m'demo@example.com'[39m, password: [32m'secret123'[39m }
+demo@example.com
+Sending response: {
+  "user": {
+    "_id": "6adf4ad0047a1be11a7518e3",
+    "name": "Demo User",
+    "email": "demo@example.com",
+    "password": "$2b$10$r3NjP9OZPqP/cGRjkE9vb.GPbcTbVbEchsCdbl1EbT.0lw8L.8c3u",
+    "role": "user",
+    "askedQuestions": [],
+    "createdAt": "2026-10-26T12:42:57.003Z",
+    "updatedAt": "2026-10-26T12:42:57.003Z",
+    "__v": 0
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQwMDQ3YTFiZTExYTc1MThlMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTc3LCJleHAiOjE3OTM2MjMzNzd9.X8YqrAxkMRrdTB2Qyg861J0cHAVdA3dxgRlPyTit3h4"
+}

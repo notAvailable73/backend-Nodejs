@@ -1,0 +1,3 @@
+source  const token = req.cookies.token;
+
+VariableDeclaration(declarations=[VariableDeclarator(id=Identifier(name='token'), init=MemberExpression(object=MemberExpression(object=Identifier(name='req'), property=Identifier(name='cookies')), property=Identifier(name='token')))], kind='const')

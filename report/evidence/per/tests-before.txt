@@ -1,0 +1,63 @@
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mtests/[22m[1mauth.test.js[22m
+[1m[31m  [1m● [22m[1mPOST /api/auth/register › rejects a duplicate email with 400[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m400[39m
+    Received: [31m500[39m
+
+[2m    [0m [90m 42 |[39m         [36mconst[39m res [33m=[39m [36mawait[39m register()[33m;[39m[22m
+[2m     [90m 43 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 44 |[39m         expect(res[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;[39m[22m
+[2m     [90m    |[39m                            [31m[1m^[22m[2m[39m[22m
+[2m     [90m 45 |[39m         expect(res[33m.[39mbody)[33m.[39mtoEqual({[22m
+[2m     [90m 46 |[39m             success[33m:[39m [36mfalse[39m[33m,[39m[22m
+[2m     [90m 47 |[39m             message[33m:[39m [32m"A user with this email already exists"[39m[33m,[39m[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/auth.test.js[39m[0m[2m:44:28)[22m[2m[22m
+
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mtests/[22m[1mquestions.test.js[22m
+[1m[31m  [1m● [22m[1mGET /api/questions › answers 404 when nothing matches[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [2m  Object {[22m
+    [32m-   "message": "No questions found",[39m
+    [31m+   "message": "Error occurred while fetching questions",[39m
+    [2m    "success": false,[22m
+    [2m  }[22m
+
+[2m    [0m [90m 93 |[39m[22m
+[2m     [90m 94 |[39m         expect(res[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 95 |[39m         expect(res[33m.[39mbody)[33m.[39mtoMatchObject({ success[33m:[39m [36mfalse[39m[33m,[39m message[33m:[39m [32m"No questions found"[39m })[33m;[39m[22m
+[2m     [90m    |[39m                          [31m[1m^[22m[2m[39m[22m
+[2m     [90m 96 |[39m     })[33m;[39m[22m
+[2m     [90m 97 |[39m[22m
+[2m     [90m 98 |[39m     test([32m"names the search term in the 404 message"[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/questions.test.js[39m[0m[2m:95:26)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mGET /api/questions › names the search term in the 404 message[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"No questions found matching \"zakat\""[39m
+    Received: [31m"Error occurred while fetching questions"[39m
+
+[2m    [0m [90m 100 |[39m[22m
+[2m     [90m 101 |[39m         expect(res[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 102 |[39m         expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoBe([32m'No questions found matching "zakat"'[39m)[33m;[39m[22m
+[2m     [90m     |[39m                                  [31m[1m^[22m[2m[39m[22m
+[2m     [90m 103 |[39m     })[33m;[39m[22m
+[2m     [90m 104 |[39m[22m
+[2m     [90m 105 |[39m     [90m// Known bug: a question created through the API is never found by its tag[39m[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/questions.test.js[39m[0m[2m:102:34)[22m[2m[22m
+
+[1mTest Suites: [22m[1m[31m2 failed[39m[22m, 2 total
+[1mTests:       [22m[1m[31m3 failed[39m[22m, [1m[32m23 passed[39m[22m, 26 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        2.173 s, estimated 4 s

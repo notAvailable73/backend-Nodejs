@@ -1,0 +1,144 @@
+{
+  "refs": {
+    "baseline": "dfe8310",
+    "lab-setup": "48c5b89",
+    "cm-cor-01": "fa4b34b",
+    "cm-ada-01": "93ffde1",
+    "cm-pre-01": "b9a02ac",
+    "cm-per-01": "b11cba5"
+  },
+  "generatedAt": "2026-10-26",
+  "tests": {
+    "lab-setup": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "total": 20,
+      "knownBugs": 8
+    },
+    "cm-cor-01": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "total": 22,
+      "knownBugs": 6
+    },
+    "cm-ada-01": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "total": 22,
+      "knownBugs": 6
+    },
+    "cm-pre-01": {
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "total": 25,
+      "knownBugs": 5
+    },
+    "cm-per-01": {
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0,
+      "total": 26,
+      "knownBugs": 4
+    }
+  },
+  "clones": {
+    "cm-pre-01": {
+      "clones": 3,
+      "duplicatedLines": 23,
+      "percentage": 4.275092936802974
+    },
+    "cm-per-01": {
+      "clones": 1,
+      "duplicatedLines": 7,
+      "percentage": 1.37524557956778
+    },
+    "baseline": {
+      "clones": 3,
+      "duplicatedLines": 23,
+      "percentage": 4.323308270676692
+    },
+    "final": {
+      "clones": 1,
+      "duplicatedLines": 7,
+      "percentage": 1.37524557956778
+    }
+  },
+  "metrics": {
+    "baseline": {
+      "files": 17,
+      "lines": 532,
+      "sloc": 432,
+      "comments": 25,
+      "functions": 28,
+      "totalComplexity": 61,
+      "maxComplexity": 11,
+      "meanComplexity": 2.18,
+      "getQuestions": 11,
+      "loginUser": 8,
+      "createQuestion": 6
+    },
+    "final": {
+      "files": 17,
+      "lines": 509,
+      "sloc": 410,
+      "comments": 26,
+      "functions": 29,
+      "totalComplexity": 51,
+      "maxComplexity": 7,
+      "meanComplexity": 1.76,
+      "getQuestions": 7,
+      "loginUser": 4,
+      "createQuestion": 2
+    }
+  },
+  "eslint": {
+    "baseline": 3,
+    "final": 3
+  },
+  "coverage": {
+    "baseline": {
+      "lines": 72.74,
+      "statements": 72.74,
+      "functions": 61.53,
+      "branches": 77.14
+    },
+    "final": {
+      "lines": 71.51,
+      "statements": 71.51,
+      "functions": 64.28,
+      "branches": 84.37
+    }
+  },
+  "slice": {
+    "criterion": 47,
+    "function": "getQuestions",
+    "file": "src/controllers/question.controller.js"
+  },
+  "profile": {
+    "bcryptShare": "76.7",
+    "comparePasswordShare": "74.2",
+    "busyMs": "2738.3"
+  },
+  "audit": {
+    "baseline": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 6,
+      "critical": 2,
+      "total": 9
+    },
+    "final": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 5,
+      "critical": 2,
+      "total": 8
+    }
+  }
+}

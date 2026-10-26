@@ -1,0 +1,29 @@
+file                                   lines  sloc  cmt  fns maxCC
+app.js                                    27    19    6    1     1
+config/database.js                        12    11    1    1     2
+controllers/auth.controller.js            81    63    2    6     8
+controllers/question.controller.js        93    75    8    3    11
+middlewares/auth.middleware.js            19    16    0    1     3
+middlewares/multer.middleware.js          15    12    0    2     1
+models/question.model.js                  42    37    0    0     -
+models/seminar.model.js                   39    36    0    0     -
+models/user.model.js                      55    47    3    3     2
+routes/auth.routes.js                     12     9    0    0     -
+routes/protected.routes.js                17    14    0    1     1
+routes/question.route.js                  13     6    0    0     -
+server.js                                 31    21    4    2     3
+utils/ApiError.js                         22    21    0    2     1
+utils/ApiResponse.js                      16    14    0    2     1
+utils/asyncHandler.js                      8     6    0    3     1
+utils/cloudinary.js                       30    25    1    1     3
+TOTAL                                    532   432   25   28    11
+
+Most complex functions (cyclomatic complexity):
+  CC 11  getQuestions  (controllers/question.controller.js:38)
+  CC  8  loginUser  (controllers/auth.controller.js:27)
+  CC  6  createQuestion  (controllers/question.controller.js:6)
+  CC  3  registerUser  (controllers/auth.controller.js:6)
+  CC  3  isAuthenticated  (middlewares/auth.middleware.js:5)
+  CC  3  startServer  (server.js:10)
+
+mean CC 2.18 over 28 functions

@@ -1,0 +1,18 @@
+17 files, 1903 AST nodes, 42 node types
+
+Identifier                   744  ██████████████████████████████
+Literal                      178  ████████
+MemberExpression             163  ███████
+Property                     127  ██████
+CallExpression               111  █████
+ExpressionStatement           62  ███
+ObjectExpression              50  ███
+BlockStatement                45  ██
+VariableDeclaration           45  ██
+VariableDeclarator            45  ██
+ImportDeclaration             37  ██
+ImportSpecifier               22  █
+NewExpression                 22  █
+ArrowFunctionExpression       20  █
+ThisExpression                20  █
+… 27 more node types

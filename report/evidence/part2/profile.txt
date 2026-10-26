@@ -1,0 +1,38 @@
+$ node --cpu-prof report/tools/workload.mjs . --iterations 30
+workload finished: 30 iterations of login, profile, add question, search
+
+$ node report/tools/profile.mjs workload.cpuprofile --svg icicle.svg
+sampled 2797.4 ms; idle 59.1 ms; busy (CPU) 2738.3 ms
+
+CPU time by package (self time)
+  bcryptjs                   2099.5 ms  76.7%  ███████████████████████████████
+  node internals              377.0 ms  13.8%  ██████
+  mongoose                     92.0 ms   3.4%  █
+  mongodb                      52.5 ms   1.9%  █
+  (garbage collector)          21.3 ms   0.8%  
+  express                      11.7 ms   0.4%  
+  bson                         11.1 ms   0.4%  
+  (program)                     9.4 ms   0.3%  
+
+Top functions by self time
+        self      %  function  location
+   1980.9 ms  72.3%  _encipher  bcryptjs/index.js:743
+     98.5 ms   3.6%  _key  bcryptjs/index.js:881
+     67.3 ms   2.5%  wrapSafe  node:internal/modules/cjs/loader:1846
+     21.3 ms   0.8%  (garbage collector)  
+     18.2 ms   0.7%  internalModuleStat  
+     15.9 ms   0.6%  _streamtoword  bcryptjs/index.js:868
+     11.6 ms   0.4%  compileForInternalLoader  node:internal/bootstrap/realm:407
+      9.4 ms   0.3%  (program)  
+      8.5 ms   0.3%  (anonymous)  node:internal/modules/cjs/loader:784
+      7.4 ms   0.3%  runMicrotasks  
+      6.8 ms   0.2%  normalizeString  node:path:92
+      6.6 ms   0.2%  readFileUtf8  
+
+Application functions by total time (including callees)
+   2048.8 ms  74.8%  (anonymous)  src/controllers/auth.controller.js:26
+   2031.7 ms  74.2%  userSchema.methods.comparePassword  src/models/user.model.js:59
+     32.9 ms   1.2%  send  src/utils/ApiResponse.js:8
+     17.0 ms   0.6%  (anonymous)  src/utils/asyncHandler.js:2
+     17.0 ms   0.6%  (anonymous)  src/controllers/question.controller.js:6
+     15.8 ms   0.6%  (anonymous)  src/controllers/question.controller.js:28

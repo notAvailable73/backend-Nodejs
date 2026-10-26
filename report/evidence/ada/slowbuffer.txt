@@ -1,0 +1,4 @@
+4:var SlowBuffer = require('buffer').SlowBuffer;
+31:  Buffer.prototype.equal = SlowBuffer.prototype.equal = function equal(that) {
+37:var origSlowBufEqual = SlowBuffer.prototype.equal;
+40:  SlowBuffer.prototype.equal = origSlowBufEqual;

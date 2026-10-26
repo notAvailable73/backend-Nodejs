@@ -1,0 +1,128 @@
+[1mdiff --git a/src/app.js b/src/app.js[m
+[1mindex a945789..e77cbe8 100644[m
+[1m--- a/src/app.js[m
+[1m+++ b/src/app.js[m
+[36m@@ -1,6 +1,7 @@[m
+ import express from "express"[m
+ import cors from "cors"[m
+ import cookieParser from "cookie-parser";[m
+[32m+[m[32mimport { ApiError } from "./utils/ApiError.js";[m
+ const app = express(); [m
+ app.use(cors()); [m
+ app.use(express.json());  [m
+[36m@@ -18,10 +19,13 @@[m [mimport protectedRoute from "./routes/protected.routes.js";[m
+ app.use("/api/questions", QuestionRoute);[m
+ app.use("/api/auth", authRoute);[m
+ app.use("/api/protected-route", protectedRoute);[m
+[31m-// Error Handling Middleware[m
+[32m+[m[32m// Error Handling Middleware: the single place where errors become responses[m
+ app.use((err, req, res, next) => {[m
+[32m+[m[32m    if (err instanceof ApiError) {[m
+[32m+[m[32m        return err.send(res);[m
+[32m+[m[32m    }[m
+     console.error(err.stack);[m
+[31m-    res.status(500).json({ message: 'Something went wrong!' });[m
+[32m+[m[32m    new ApiError(500, [], 'Something went wrong!').send(res);[m
+ });[m
+ [m
+ export {app}[m
+\ No newline at end of file[m
+[1mdiff --git a/src/controllers/auth.controller.js b/src/controllers/auth.controller.js[m
+[1mindex cfd7af2..8cd52b4 100644[m
+[1m--- a/src/controllers/auth.controller.js[m
+[1m+++ b/src/controllers/auth.controller.js[m
+[36m@@ -24,7 +24,6 @@[m [mconst registerUser = asyncHandler(async (req, res) => {[m
+ });[m
+ [m
+ const loginUser = asyncHandler(async (req, res) => {[m
+[31m-    try {[m
+     const { email, password } = req.body;[m
+     console.log(email);[m
+     if ([email, password].some(field => field?.trim() === "")) {[m
+[36m@@ -38,7 +37,6 @@[m [mconst loginUser = asyncHandler(async (req, res) => {[m
+ [m
+     const token = user.getJwtToken();[m
+ [m
+[31m-        [m
+     // Set token in HTTP-only cookie[m
+     res.cookie("token", token, {[m
+         httpOnly: true,[m
+[36m@@ -48,16 +46,6 @@[m [mconst loginUser = asyncHandler(async (req, res) => {[m
+         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days[m
+     });[m
+     return new ApiResponse(200, { user, token }, "Login successful").send(res);[m
+[31m-        [m
+[31m-    } catch (error) {[m
+[31m-        console.log(error);[m
+[31m-        const errorResponse = new ApiError([m
+[31m-          error.statusCode || 500,[m
+[31m-          error.errors || error,[m
+[31m-          error.message || "Error occured while logging in"[m
+[31m-        );[m
+[31m-        errorResponse.send(res);[m
+[31m-      }[m
+ });[m
+ [m
+ const logoutUser = asyncHandler(async (req, res) => {[m
+[1mdiff --git a/src/controllers/question.controller.js b/src/controllers/question.controller.js[m
+[1mindex 870c24e..30e831b 100644[m
+[1m--- a/src/controllers/question.controller.js[m
+[1m+++ b/src/controllers/question.controller.js[m
+[36m@@ -4,7 +4,6 @@[m [mimport { ApiResponse } from "../utils/ApiResponse.js";[m
+ import { asyncHandler } from "../utils/asyncHandler.js";[m
+ [m
+ const createQuestion = asyncHandler(async (req, res) => {[m
+[31m-  try {[m
+   const { title, description, tags, language } = req.body;[m
+   if ([m
+     [title, description, tags, language].some((field) => field?.trim() === "")[m
+[36m@@ -24,21 +23,11 @@[m [mconst createQuestion = asyncHandler(async (req, res) => {[m
+     savedQuestion,[m
+     "Question Added Successfully"[m
+   ).send(res);[m
+[31m-  } catch (error) {[m
+[31m-    console.log(error);[m
+[31m-    const errorResponse = new ApiError([m
+[31m-      error.statusCode || 500,[m
+[31m-      error.errors || error,[m
+[31m-      error.message || "Error occured while adding question"[m
+[31m-    ); [m
+[31m-    errorResponse.send(res);[m
+[31m-  }[m
+ });[m
+ [m
+ const getQuestions = asyncHandler(async (req, res) => {[m
+   console.log("Fetching questions");[m
+ [m
+[31m-  try {[m
+   const { tags, search } = req.query;[m
+ [m
+   let query = {};[m
+[36m@@ -63,8 +52,8 @@[m [mconst getQuestions = asyncHandler(async (req, res) => {[m
+   if (!questions || questions.length === 0) {[m
+     throw new ApiError([m
+       404,[m
+[31m-        search ? `No questions found matching "${search}"` : 'No questions found',[m
+[31m-        null [m
+[32m+[m[32m      [],[m
+[32m+[m[32m      search ? `No questions found matching "${search}"` : 'No questions found'[m
+     );[m
+   }[m
+ [m
+[36m@@ -77,16 +66,6 @@[m [mconst getQuestions = asyncHandler(async (req, res) => {[m
+     },[m
+     "Questions fetched successfully"[m
+   ).send(res);[m
+[31m-[m
+[31m-  } catch (error) {[m
+[31m-    console.log(error);[m
+[31m-    const errorResponse = new ApiError([m
+[31m-      error.statusCode || 500,[m
+[31m-      error.errors || error,[m
+[31m-      error.message || "Error occurred while fetching questions"[m
+[31m-    );[m
+[31m-    errorResponse.send(res); [m
+[31m-  }[m
+ });[m
+ [m
+ [m

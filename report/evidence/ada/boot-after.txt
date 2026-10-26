@@ -1,0 +1,10 @@
+$ node --version
+v26.10.0
+
+$ node src/server.js
+✅ MongoDB connected successfully
+🚀 MongoDB Connected!
+🚀 Server is running at port: 5055
+
+                Link: http://localhost:5055
+[still running after 6 s, stopped by the demo]

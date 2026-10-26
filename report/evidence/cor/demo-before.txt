@@ -1,0 +1,36 @@
+$ node src/server.js &
+
+$ curl http://127.0.0.1:5055/api/auth/profile
+curl: (28) Operation timed out after 3002 milliseconds with 0 bytes received
+
+[no HTTP response]
+
+$ curl --cookie token=not-a-jwt http://127.0.0.1:5055/api/auth/profile
+curl: (52) Empty reply from server
+
+[no HTTP response]
+
+$ kill -0 $SERVER_PID   # is the server process still running?
+no, it exited with code 1
+
+--- server output ---
+✅ MongoDB connected successfully
+🚀 MongoDB Connected!
+🚀 Server is running at port: 5055
+
+                Link: http://localhost:5055
+file://~/backend-Nodejs/src/middlewares/auth.middleware.js:17
+        throw new ApiError(401, "Unauthorized", "Invalid or expired token");
+              ^
+
+ApiError: Invalid or expired token
+    at isAuthenticated [90m(file://~/backend-Nodejs/[39msrc/middlewares/auth.middleware.js:17:15[90m)[39m
+    at Layer.handle [as handle_request] [90m(~/backend-Nodejs/[39mnode_modules/[4mexpress[24m/lib/router/layer.js:95:5[90m)[39m
+    at next [90m(~/backend-Nodejs/[39mnode_modules/[4mexpress[24m/lib/router/route.js:149:13[90m)[39m
+    at Route.dispatch [90m(~/backend-Nodejs/[39mnode_modules/[4mexpress[24m/lib/router/route.js:119:3[90m)[39m
+  statusCode: [33m401[39m,
+  success: [33mfalse[39m,
+  errors: [32m'Unauthorized'[39m
+}
+
+Node.js v24.21.0

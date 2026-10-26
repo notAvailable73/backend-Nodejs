@@ -1,0 +1,4 @@
+8 vulnerabilities (1 moderate, 5 high, 2 critical)
+
+To address all issues, run:
+  npm audit fix

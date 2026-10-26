@@ -1,0 +1,22 @@
+$ node --version
+v26.10.0
+
+$ node src/server.js
+~/backend-Nodejs/node_modules/buffer-equal-constant-time/index.js:37
+var origSlowBufEqual = SlowBuffer.prototype.equal;
+                                  ^
+
+TypeError: Cannot read properties of undefined (reading 'prototype')
+    at Object.<anonymous> [90m(~/backend-Nodejs/[39mnode_modules/[4mbuffer-equal-constant-time[24m/index.js:37:35[90m)[39m
+[90m    at Module._compile (node:internal/modules/cjs/loader:1956:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:2096:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1678:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1470:12)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)[39m
+[90m    at Module.require (node:internal/modules/cjs/loader:1701:12)[39m
+[90m    at require (node:internal/modules/helpers:318:16)[39m
+    at Object.<anonymous> [90m(~/backend-Nodejs/[39mnode_modules/[4mjwa[24m/index.js:1:19[90m)[39m
+[90m    at Module._compile (node:internal/modules/cjs/loader:1956:14)[39m
+
+Node.js v26.10.0
+[exited with code 1]

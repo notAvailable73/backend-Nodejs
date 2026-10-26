@@ -1,0 +1,27 @@
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/[22m[1mauth.test.js[22m
+  POST /api/auth/register
+    [33m○[39m [2mskipped creates a user and returns a JWT[22m
+    [33m○[39m [2mskipped stores the password hashed[22m
+    [33m○[39m [2mskipped rejects a duplicate email with 400[22m
+  credential exposure
+    [32m✓[39m [2mregistration does not return the password hash (132 ms)[22m
+    [32m✓[39m [2mlogin does not return the password hash (163 ms)[22m
+    [32m✓[39m [2mregistration does not log the plaintext password (70 ms)[22m
+    [32m✓[39m [2mlogin does not log the token or the password hash (138 ms)[22m
+  POST /api/auth/login
+    [33m○[39m [2mskipped returns a JWT and sets it as an HTTP-only cookie[22m
+    [33m○[39m [2mskipped rejects a wrong password with 401[22m
+    [33m○[39m [2mskipped rejects an unknown email with 401[22m
+  GET /api/auth/profile
+    [33m○[39m [2mskipped returns the logged-in user without the password[22m
+    [33m○[39m [2mskipped rejects a request without a token with 401[22m
+    [33m○[39m [2mskipped rejects a malformed token with 401[22m
+    [33m○[39m [2mskipped rejects a signed with another secret token with 401[22m
+    [33m○[39m [2mskipped rejects a expired token with 401[22m
+  POST /api/auth/logout
+    [33m○[39m [2mskipped clears the token cookie[22m
+
+[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 total
+[1mTests:       [22m[1m[33m12 skipped[39m[22m, [1m[32m4 passed[39m[22m, 16 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0.914 s, estimated 1 s

@@ -1,0 +1,29 @@
+backend-Nodejs/
+├── src/
+│   ├── config/
+│   │   └── database.js
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   └── question.controller.js
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   └── multer.middleware.js
+│   ├── models/
+│   │   ├── question.model.js
+│   │   ├── seminar.model.js
+│   │   └── user.model.js
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── protected.routes.js
+│   │   └── question.route.js
+│   ├── utils/
+│   │   ├── ApiError.js
+│   │   ├── ApiResponse.js
+│   │   ├── asyncHandler.js
+│   │   └── cloudinary.js
+│   ├── app.js
+│   └── server.js
+├── .gitignore
+├── package-lock.json
+├── package.json
+└── vercel.json

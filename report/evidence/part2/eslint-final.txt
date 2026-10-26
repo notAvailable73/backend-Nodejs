@@ -1,0 +1,12 @@
+[0m
+[4m~/backend-Nodejs/src/app.js[24m
+  [2m23:25[22m  [31merror[39m  'next' is defined but never used  [2mno-unused-vars[22m
+
+[4m~/backend-Nodejs/src/controllers/auth.controller.js[24m
+  [2m45:9[22m  [31merror[39m  Duplicate key 'secure'  [2mno-dupe-keys[22m
+
+[4m~/backend-Nodejs/src/middlewares/auth.middleware.js[24m
+  [2m15:14[22m  [31merror[39m  'error' is defined but never used  [2mno-unused-vars[22m
+
+[31m[1m✖ 3 problems (3 errors, 0 warnings)[22m[39m
+[0m

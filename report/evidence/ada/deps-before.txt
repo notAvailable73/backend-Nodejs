@@ -1,0 +1,5 @@
+jamiya-backend@1.0.0 ~/backend-Nodejs
+└─┬ jsonwebtoken@9.0.2
+  └─┬ jws@3.2.2
+    └─┬ jwa@1.4.1
+      └── buffer-equal-constant-time@1.0.1

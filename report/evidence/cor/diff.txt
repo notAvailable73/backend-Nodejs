@@ -1,0 +1,23 @@
+[1mdiff --git a/src/middlewares/auth.middleware.js b/src/middlewares/auth.middleware.js[m
+[1mindex b6bbcf7..cfe920b 100644[m
+[1m--- a/src/middlewares/auth.middleware.js[m
+[1m+++ b/src/middlewares/auth.middleware.js[m
+[36m@@ -6,14 +6,14 @@[m [mexport const isAuthenticated = async (req, res, next) => {[m
+     const token = req.cookies.token;[m
+ [m
+     if (!token) {[m
+[31m-        return new ApiError(401, "Unauthorized", "No token provided");[m
+[32m+[m[32m        return new ApiError(401, "Unauthorized", "No token provided").send(res);[m
+     }[m
+ [m
+     try {[m
+         const decoded = jwt.verify(token, process.env.JWT_SECRET);[m
+         req.user = await User.findById(decoded.id).select("-password");[m
+[31m-        next();[m
+     } catch (error) {[m
+[31m-        throw new ApiError(401, "Unauthorized", "Invalid or expired token");[m
+[32m+[m[32m        return new ApiError(401, "Unauthorized", "Invalid or expired token").send(res);[m
+     }[m
+[32m+[m[32m    next();[m
+ };[m
+\ No newline at end of file[m

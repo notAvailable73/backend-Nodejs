@@ -9,7 +9,10 @@
     "start": "node ./src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "db:up": "docker compose up -d --wait",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "report": "npm run report:capture && npm run report:build",
+    "report:capture": "node report/capture.mjs",
+    "report:build": "node report/build.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -36,7 +39,12 @@
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "espree": "11.2.0",
+    "globals": "17.13.0",
     "jest": "30.5.2",
+    "jscpd": "5.4.2",
     "nodemon": "^3.1.9",
     "supertest": "7.3.1"
   }

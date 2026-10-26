@@ -1,0 +1,25 @@
+2026-10-26 12:43:34.117 | SUCCESS | ── register a new user
+2026-10-26 12:43:34.152 | DEBUG   |     db.users.findOne({"email":"trace@example.com"}, {})
+2026-10-26 12:43:34.154 | DEBUG   |     db.users.createIndex({"email":1}, {"unique":true,"background":true})
+2026-10-26 12:43:34.232 | DEBUG   |     db.users.insertOne({"name":"Trace User","email":"trace@example.com","password":"<bcrypt hash>","role":"user","askedQuestions":[],"_id":"6adf4af6ae67bd23352b3af1","createdAt":"2026-10-26T12:43:34.160Z","updatedAt":"2026-10-26T12:43:34.160Z","__v":0}, {})
+2026-10-26 12:43:34.239 | INFO    | POST /api/auth/register -> 201 (94.5 ms)
+2026-10-26 12:43:34.243 | SUCCESS | ── log in with a wrong password
+2026-10-26 12:43:34.246 | DEBUG   |     db.users.findOne({"email":"trace@example.com"}, {})
+2026-10-26 12:43:34.314 | WARNING | POST /api/auth/login -> 401 (69.0 ms)
+2026-10-26 12:43:34.315 | SUCCESS | ── log in
+2026-10-26 12:43:34.317 | DEBUG   |     db.users.findOne({"email":"trace@example.com"}, {})
+2026-10-26 12:43:34.386 | INFO    | POST /api/auth/login -> 200 (69.4 ms)
+2026-10-26 12:43:34.387 | SUCCESS | ── read the profile with the session cookie
+2026-10-26 12:43:34.390 | DEBUG   |     db.users.findOne({"_id":"6adf4af6ae67bd23352b3af1"}, {"projection":{"password":0}})
+2026-10-26 12:43:34.392 | INFO    | GET /api/auth/profile -> 200 (4.5 ms)
+2026-10-26 12:43:34.393 | SUCCESS | ── read the profile with a forged token
+2026-10-26 12:43:34.394 | WARNING | GET /api/auth/profile -> 401 (0.5 ms)
+2026-10-26 12:43:34.394 | SUCCESS | ── add a question tagged 'fiqh'
+2026-10-26 12:43:34.398 | DEBUG   |     db.questions.insertOne({"translations":[{"language":"en","title":"How to perform wudu?","description":"Steps of ablution","answer":[],"_id":"6adf4af6ae67bd23352b3af7"}],"isFeatured":false,"tags":[],"_id":"6adf4af6ae67bd23352b3af6","createdAt":"2026-10-26T12:43:34.398Z","updatedAt":"2026-10-26T12:43:34.398Z","__v":0}, {})
+2026-10-26 12:43:34.399 | INFO    | POST /api/questions/add -> 201 (4.7 ms)
+2026-10-26 12:43:34.400 | SUCCESS | ── list questions tagged 'fiqh'
+2026-10-26 12:43:34.402 | DEBUG   |     db.questions.find({"tags":{"$in":["fiqh"]}}, {"sort":{"createdAt":-1},"projection":{"__v":0}})
+2026-10-26 12:43:34.403 | WARNING | GET /api/questions?tags=fiqh -> 404 (2.4 ms)
+2026-10-26 12:43:34.404 | SUCCESS | ── search question titles for 'wudu'
+2026-10-26 12:43:34.405 | DEBUG   |     db.questions.find({"translations.title":{"$regex":"wudu","$options":"i"}}, {"sort":{"createdAt":-1},"projection":{"__v":0}})
+2026-10-26 12:43:34.408 | INFO    | GET /api/questions?search=wudu -> 200 (3.4 ms)

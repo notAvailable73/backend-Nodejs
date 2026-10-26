@@ -1,0 +1,7 @@
+[1mDuplications detection: Found 3 exact clones with 23(4.28%) duplicated lines in 17 (1 formats) files.[22m
+ - [1m[32mcontrollers/auth.controller.js[39m[22m [50:72 - 57:27] (8 lines, 42 tokens)
+   controllers/question.controller.js [26:5 - 32:23]
+ - [1m[32mcontrollers/auth.controller.js[39m[22m [50:72 - 57:27] (8 lines, 42 tokens)
+   controllers/question.controller.js [79:5 - 86:23]
+ - [1m[32mmodels/question.model.js[39m[22m [3:33 - 9:7] (7 lines, 33 tokens)
+   models/seminar.model.js [3:32 - 9:7]

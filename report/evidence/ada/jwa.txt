@@ -1,0 +1,10 @@
+138:var timingSafeEqual = 'timingSafeEqual' in crypto ? function timingSafeEqual(a, b) {
+139-  if (a.byteLength !== b.byteLength) {
+140-    return false;
+141-  }
+142-
+143-  return crypto.timingSafeEqual(a, b)
+144-} : function timingSafeEqual(a, b) {
+145-  if (!bufferEqual) {
+146-    bufferEqual = require('buffer-equal-constant-time');
+147-  }

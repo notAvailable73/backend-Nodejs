@@ -1,0 +1,18 @@
+dfe8310 2025-03-10 Feat: question can be fetched using tags and search
+880a09a 2025-03-09 refactor: comment out cookie setting in login response
+556f819 2025-03-09 feat: enhance login response with cookie SameSite attribute and logging
+536a680 2025-03-09 fix: add try catch block in login function
+87870ad 2025-03-09 Merge branch 'main' of https://github.com/suffahUniversity/backend-Nodejs
+bfd11e0 2025-03-09 feat: implement cookie-based authentication and update API routes
+fe19012 2025-02-19 Rename Question.model.js to question.model.js
+bf87e0f 2025-02-19 fix: refactor server startup logic for vercel
+8feae3a 2025-02-19 fix: update main entry point to src/server.js and enhance Vercel configuration
+658ab10 2025-02-18 feat: add start script to package.json for production use
+d7ee724 2025-02-18 fix: change response method to send for welcome message
+a97c717 2025-02-18 vercel.json ./
+6a0961e 2025-02-18 update Vercel rewrites to direct /src/server.js to /api
+c465f90 2025-02-15 add welcome message in root endpoint
+00be4ff 2025-02-15 add Vercel configuration for API rewrites
+f366673 2025-02-15 implement authentication routes
+6b4457b 2025-01-15 added seminar model
+b21247c 2025-01-12 initialize backend project with essential configurations and utilities

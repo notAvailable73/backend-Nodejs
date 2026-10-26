@@ -1,0 +1,47 @@
+$ node src/server.js &
+
+$ curl -X POST http://127.0.0.1:5055/api/auth/register -d '{"name":"Demo User","email":"demo@example.com","password":"secret123"}'
+{
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "name": "Demo User",
+      "email": "demo@example.com",
+      "role": "user",
+      "askedQuestions": [],
+      "_id": "6adf4ad3e6077970efbf1892",
+      "createdAt": "2026-10-26T12:42:59.986Z",
+      "updatedAt": "2026-10-26T12:42:59.986Z",
+      "__v": 0
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQzZTYwNzc5NzBlZmJmMTg5MiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTgwLCJleHAiOjE3OTM2MjMzODB9.Z0tSnic80uA-Xsn9VW1pWE7mROr-FxvUfYl2QtNkLlo"
+  }
+}
+[HTTP 201]
+
+$ curl -X POST http://127.0.0.1:5055/api/auth/login -d '{"email":"demo@example.com","password":"secret123"}'
+{
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "_id": "6adf4ad3e6077970efbf1892",
+      "name": "Demo User",
+      "email": "demo@example.com",
+      "role": "user",
+      "askedQuestions": [],
+      "createdAt": "2026-10-26T12:42:59.986Z",
+      "updatedAt": "2026-10-26T12:42:59.986Z",
+      "__v": 0
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQzZTYwNzc5NzBlZmJmMTg5MiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTgwLCJleHAiOjE3OTM2MjMzODB9.Z0tSnic80uA-Xsn9VW1pWE7mROr-FxvUfYl2QtNkLlo"
+  }
+}
+[HTTP 200]
+
+--- server output ---
+✅ MongoDB connected successfully
+🚀 MongoDB Connected!
+🚀 Server is running at port: 5055
+
+                Link: http://localhost:5055
+demo@example.com

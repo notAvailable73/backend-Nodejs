@@ -1,0 +1,48 @@
+Dynamic backward slice of getQuestions (question.controller.js)
+criterion: line 47, variables {query}
+legend: ▶ criterion  ● in slice  · did not execute
+
+   28  const getQuestions = asyncHandler(async (req, res) => {
+   29    console.log("Fetching questions");
+   30  
+●  31    const { tags, search } = req.query;
+   32  
+●  33    let query = {};
+   34  
+   35    // Handle tag filtering
+   36    if (tags) {
+·  37      const tagArray = Array.isArray(tags) ? tags : tags.split(',');
+·  38      query.tags = { $in: tagArray };
+·  39    }
+   40  
+   41    // Handle search filtering
+●  42    if (search) {
+●  43      query['translations.title'] = { $regex: search, $options: 'i' }; // Case-insensitive search in title
+   44    }
+   45  
+   46    // Fetch questions
+▶  47    const questions = await Question.find(query)
+▶  48      .select('-__v') // Exclude version key
+▶  49      .sort({ createdAt: -1 }); // Sort by latest
+   50  
+   51    // If no questions found
+   52    if (!questions || questions.length === 0) {
+·  53      throw new ApiError(
+·  54        404,
+·  55        [],
+·  56        search ? `No questions found matching "${search}"` : 'No questions found'
+·  57      );
+·  58    }
+   59  
+   60    // Return response
+   61    return new ApiResponse(
+   62      200,
+   63      {
+   64        count: questions.length,
+   65        questions
+   66      },
+   67      "Questions fetched successfully"
+   68    ).send(res);
+   69  });
+
+5 of 12 statements/predicates in the slice; depends on parameter(s) req

@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Maintenance Lab Report</title>
+<style>
+/* style.css */
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<div class="cover">
+  <div>
+    <div class="inst"><x-val k="config.university"></x-val></div>
+    <div class="dept"><x-val k="config.department"></x-val></div>
+    <div class="course"><x-val k="config.courseCode"></x-val></div>
+    <div class="course-name"><x-val k="config.courseName"></x-val></div>
+    <div class="title-block">
+      <div class="kicker">Lab Project</div>
+      <h1 class="title">Simulating the Four Categories of Software Maintenance, with Static/Dynamic Analysis and Program Slicing</h1>
+      <div class="abstract">
+        <b>Part 1:</b> a case study on an existing production codebase (the <i>Jamia as-Suffah</i> Node.js / Express / MongoDB backend),
+        applying Program Comprehension, Change Management, Impact Analysis, Reverse Engineering and Refactoring to one real,
+        minimal example each of Corrective, Adaptive, Preventive and Perfective maintenance.
+        <b>Part 2:</b> static analysis (AST generation, metrics, linting), dynamic analysis (code coverage), program slicing
+        (static and dynamic), runtime tracing and profiling, and code clone detection applied to the same codebase.
+      </div>
+    </div>
+  </div>
+  <div class="by">
+    <div class="label">Submitted by</div>
+    <div class="name"><x-val k="config.studentName"></x-val></div>
+    <div class="id">ID: <x-val k="config.studentId"></x-val></div>
+  </div>
+  <div class="meta">
+    <x-val k="config.submitted"></x-val><br>
+    Repository: <x-val k="config.repository"></x-val> · branch <x-val k="config.branch"></x-val><br>
+    Every figure in this report was regenerated from git tags by <code>npm run report</code> (Appendix A).
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<div class="contents">
+  <h2 class="plain">Contents</h2>
+  <x-toc></x-toc>
+</div>
+
+<!-- ======================================================================= -->
+<div class="part-title">Part 1 · Software Maintenance</div>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="intro">1. Introduction &amp; Project Overview</h1><div class="tagline">Section 1</div></div>
+
+<p><b>Subject system.</b> The subject of this lab is the backend of <i>Jamia as-Suffah</i>, a website for an Islamic educational
+institution. It is a REST API written in Node.js with Express 4 and Mongoose 8 (MongoDB), deployed as a serverless function on Vercel.
+Users register and log in (the session is a JWT stored in an HTTP-only cookie); the main feature is a multilingual question-and-answer
+store in which each question carries English, Bengali and Arabic translations (<code>en</code>/<code>bn</code>/<code>ar</code>) and
+a list of tags, and can be filtered by tag or searched by title. A seminar model and a Cloudinary upload helper exist but are not yet
+wired to any route. At the start of this lab the code base had <x-val k="metrics.baseline.files"></x-val> JavaScript files and
+<x-val k="metrics.baseline.sloc"></x-val> source lines, 18 commits between January and March 2025, and no tests, README or design documents.</p>
+
+<p><b>Why this system.</b> It is small enough to understand completely, but it is a real project with real, unplanted defects: one
+malformed cookie can terminate the server, the server cannot start on current Node.js releases, passwords are written to the log, and
+error handling is copied by hand into each controller. Every maintenance activity below targets one of these, found by reading the
+code, running it, and reading its git history. The project's own last commits ("fix: add try catch block in login function",
+"refactor: comment out cookie setting in login response") show the developers already struggling with the same areas.</p>
+
+<h2 id="architecture">Recovered architecture</h2>
+<p>No architecture description exists, so the structure below was recovered from <code>src/</code> (Section 3 shows the file tree).
+Requests pass through four global middlewares, are routed to a controller, and the controller uses a Mongoose model. Errors are meant
+to reach a final error-handling middleware.</p>
+<pre class="diagram">HTTP client
+    │
+    ▼
+src/app.js   cors() → express.json() → express.static("public") → cookieParser()
+    │
+    ├── /api/auth ............ auth.routes.js ─────► auth.controller.js ────► <span class="hl">User</span> model ───────┐
+    │                            └─ isAuthenticated (auth.middleware.js: JWT in "token" cookie)    │
+    ├── /api/protected-route . protected.routes.js (isAuthenticated + inline handler)              ├──► MongoDB
+    ├── /api/questions ....... question.route.js ──► question.controller.js ► <span class="hl">Question</span> model ──┤
+    │                                                                  <span class="hl">Seminar</span> model (no routes) ┘
+    └── error handler (app.js) ◄── errors forwarded by asyncHandler (utils/asyncHandler.js)
+
+src/server.js   loads .env, connects to MongoDB (config/database.js), starts listening (not on Vercel)</pre>
+
+<h3>Recovered API contract</h3>
+<table>
+<thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Handler</th><th>Behaviour</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td><code>/api/auth/register</code></td><td>—</td><td>registerUser</td><td>{name, email, password} → 201 {user, token}</td></tr>
+<tr><td>POST</td><td><code>/api/auth/login</code></td><td>—</td><td>loginUser</td><td>{email, password} → 200 {user, token}, sets <code>token</code> cookie (7 days)</td></tr>
+<tr><td>POST</td><td><code>/api/auth/logout</code></td><td>cookie</td><td>logoutUser</td><td>clears the cookie</td></tr>
+<tr><td>GET</td><td><code>/api/auth/profile</code></td><td>cookie</td><td>getProfile</td><td>the logged-in user</td></tr>
+<tr><td>GET</td><td><code>/api/protected-route</code></td><td>cookie</td><td>inline</td><td>"You are authenticated"</td></tr>
+<tr><td>POST</td><td><code>/api/questions/add</code></td><td>—</td><td>createQuestion</td><td>{title, description, tags, language} → 201 question</td></tr>
+<tr><td>GET</td><td><code>/api/questions</code></td><td>—</td><td>getQuestions</td><td><code>?tags=a,b</code> and/or <code>?search=text</code> → 200 {count, questions} or 404</td></tr>
+</tbody>
+</table>
+<p class="caption">Table 1. Endpoints reconstructed from the route and controller files. Success responses are <code>{message, data}</code>
+(ApiResponse); error responses are <code>{success: false, message, errors}</code> (ApiError).</p>
+</section>
+
+<section class="chapter flow">
+<div class="chapter-head"><h1 id="method">2. Methodology</h1><div class="tagline">Section 2</div></div>
+
+<p>Software maintenance is conventionally divided into four categories (ISO/IEC/IEEE 14764): <b>Corrective</b> (repair a fault that
+causes failures), <b>Adaptive</b> (keep the software usable in a changed environment), <b>Preventive</b> (remove latent faults before
+they cause failures) and <b>Perfective</b> (improve maintainability or performance without changing behaviour). For each category,
+this lab made one deliberately small, self-contained change and documented it with the same five steps:</p>
+<ol>
+<li><b>Program Comprehension</b>: read and run the relevant code until the problem and its cause are understood.</li>
+<li><b>Change Management</b>: record a change request: id, category, risk, files touched, and the decision taken.</li>
+<li><b>Impact Analysis</b>: identify every file, caller and behaviour the change can affect.</li>
+<li><b>Reverse Engineering</b>: reconstruct the undocumented design knowledge (flows, contracts, dependency chains) the change relies on.</li>
+<li><b>Refactoring (Implementation)</b>: apply the minimal change and verify it with real tooling.</li>
+</ol>
+
+<p><b>Test first.</b> Before any change, a Jest + supertest suite was added that records the current behaviour. Every bug found during
+comprehension was written down as a <code>test.failing</code>: a test that states the <i>correct</i> behaviour and is expected to fail.
+Jest reports such a test as passing while the bug exists and as failing once the bug is gone, so each fix is proven by flipping its
+test to a normal <code>test</code>. For changes that add new expectations, the new tests are also run against the previous version's
+source to show that they fail there.</p>
+
+<p><b>Traceability.</b> Each change is one commit with its own git tag, so every "before" and "after" in this report is a real,
+checkable version of the project:</p>
+<table>
+<thead><tr><th>Tag</th><th>Commit</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>baseline</code></td><td><code><x-val k="refs.baseline"></x-val></code></td><td>the project exactly as found (origin/main)</td></tr>
+<tr><td><code>lab-setup</code></td><td><code><x-val k="refs.lab-setup"></x-val></code></td><td>+ Docker MongoDB, <code>.env.example</code>, Jest suite, README; <code>src/</code> unchanged</td></tr>
+<tr><td><code>cm-cor-01</code></td><td><code><x-val k="refs.cm-cor-01"></x-val></code></td><td>+ Corrective change (Section 4)</td></tr>
+<tr><td><code>cm-ada-01</code></td><td><code><x-val k="refs.cm-ada-01"></x-val></code></td><td>+ Adaptive change (Section 5)</td></tr>
+<tr><td><code>cm-pre-01</code></td><td><code><x-val k="refs.cm-pre-01"></x-val></code></td><td>+ Preventive change (Section 6)</td></tr>
+<tr><td><code>cm-per-01</code></td><td><code><x-val k="refs.cm-per-01"></x-val></code></td><td>+ Perfective change (Section 7): the final version</td></tr>
+</tbody>
+</table>
+
+<p><b>Evidence.</b> The dark terminal panes in this report are not screenshots. They are the real output of the commands shown in their
+first line, captured by <code>report/capture.mjs</code> from a fresh checkout of the tag named in the title bar, under the Node.js
+version shown. The caption under each pane names the evidence file it came from. Paths are shortened to <code>~/backend-Nodejs</code>
+and, where a pane is long, omitted lines are marked. Running <code>npm run report</code> regenerates every pane, number and the PDF
+itself (Appendix A).</p>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter">
+<div class="chapter-head"><h1 id="tooling">3. Tooling &amp; Environment Evidence</h1><div class="tagline">Section 3</div></div>
+
+<p>Before any change, the project was installed and its starting state captured. The machine runs a recent Linux kernel and
+Node.js 26; MongoDB runs in Docker.</p>
+
+<x-term id="setup/env">Environment used for every capture.</x-term>
+
+<x-term id="setup/npm-ci">Installing the project's dependencies, required before the server or the tests can run.</x-term>
+
+<div class="compare">
+<div><x-term id="setup/history" size="small">Commit history at the start of the lab (tag <code>baseline</code>).</x-term></div>
+<div><x-term id="setup/structure" size="small">Project structure at <code>baseline</code>.</x-term></div>
+</div>
+
+<h2 id="environment-setup">Environment set-up as a first adaptation</h2>
+<p>The project expects a MongoDB server but provides no way to run one. A <code>docker-compose.yml</code> was added. The obvious image,
+MongoDB 8.0, refuses to start on this machine: Linux 6.19 and newer has a known incompatibility with MongoDB 8.x. MongoDB is therefore
+pinned to 7.0.45, which Mongoose 8.9 supports.</p>
+<x-term id="setup/mongo8-kernel">MongoDB 8.0 refuses to start on Linux 7.0 (only the fatal log line is kept).</x-term>
+
+<h2 id="baseline-tests">Baseline test suite</h2>
+<p>The suite added in <code>lab-setup</code> runs against a separate <code>jamiya_test</code> database and does not change the
+application: <code>git diff baseline lab-setup -- src</code> is empty (evidence <code>setup/src-unchanged</code>). All
+<x-val k="tests.lab-setup.total"></x-val> tests pass; <x-val k="tests.lab-setup.knownBugs"></x-val> of them are
+<code>test.failing</code> tests that document known bugs (Table 2). Jest prints a <code>test.failing</code> test with a ✓ while the
+bug is still present.</p>
+<x-term id="setup/tests" lines="4-34">Baseline run of the suite (tag <code>lab-setup</code>, Node.js 24, the last release the original code starts on).</x-term>
+
+<table>
+<thead><tr><th>Known-bug test (<code>test.failing</code>)</th><th>Bug it records</th><th>Resolved by</th></tr></thead>
+<tbody>
+<tr><td>rejects a request without a token with 401</td><td>auth middleware never answers</td><td>CM-COR-01</td></tr>
+<tr><td>handles an invalid token without rejecting</td><td>unhandled rejection terminates the process</td><td>CM-COR-01</td></tr>
+<tr><td>does not expose the password hash</td><td>bcrypt hash returned to clients</td><td>CM-PRE-01</td></tr>
+<tr><td>rejects a duplicate email with 400</td><td>error handler ignores ApiError status (500)</td><td>CM-PER-01</td></tr>
+<tr><td>stores the tags on the question</td><td>tags nested inside the translation</td><td>residual (§8)</td></tr>
+<tr><td>finds a question created through the API by its tag</td><td>consequence of the tags bug</td><td>residual (§8)</td></tr>
+<tr><td>rejects a missing title with 400</td><td><code>field?.trim() === ""</code> lets <code>undefined</code> through</td><td>residual (§8)</td></tr>
+<tr><td>treats regex characters in the search term literally</td><td>search text passed to <code>$regex</code> unescaped</td><td>residual (§8)</td></tr>
+</tbody>
+</table>
+<p class="caption">Table 2. The eight known bugs recorded at <code>lab-setup</code>. Four are fixed by the maintenance changes; four are
+recorded as residual findings, outside this lab's one-change-per-category scope.</p>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter cor">
+<div class="chapter-head"><h1 id="corrective">4. Corrective Maintenance</h1><div class="tagline">Repair a fault</div></div>
+
+<h2 id="cor-comprehension"><span class="step">1 ·</span> Program Comprehension</h2>
+<p><code>isAuthenticated</code> (<code>src/middlewares/auth.middleware.js</code>) guards three routes. It reads the <code>token</code>
+cookie, verifies the JWT, loads the user and calls <code>next()</code>. Reading it next to Express 4's middleware contract shows two
+faults on the failure paths:</p>
+<ul>
+<li><b>No cookie:</b> line 9 <i>returns</i> a new <code>ApiError</code> but never sends it. Express ignores a middleware's return value,
+so no response is ever written and no <code>next()</code> is called. The client waits until it times out.</li>
+<li><b>Invalid or expired token:</b> <code>jwt.verify</code> throws, and the catch block on line 17 <i>throws</i> again. Because the
+middleware is an <code>async</code> function, this becomes a rejected promise. Express 4 does not look at promises returned by middleware
+(only Express 5 does), so the rejection is unhandled. Since Node.js 15 an unhandled rejection terminates the process.</li>
+</ul>
+<p>The second fault is severe: a single request with any malformed or expired cookie stops the server for every user. Running the
+original code confirms both faults.</p>
+<x-term id="cor/demo-before">Before: the first request gets no response; the second terminates the server (exit code 1) with the
+<code>ApiError</code> from line 17 as the uncaught error.</x-term>
+
+<h2 id="cor-change"><span class="step">2 ·</span> Change Management</h2>
+<table class="change">
+<thead><tr><th>Change id</th><th>Type</th><th>Risk</th><th>Files touched</th></tr></thead>
+<tbody><tr><td>CM-COR-01</td><td>Corrective</td><td>Low</td><td>auth.middleware.js (1)</td></tr></tbody>
+</table>
+<p>Send both 401 responses with the existing <code>ApiError.send(res)</code> instead of returning or throwing them, and move
+<code>next()</code> out of the <code>try</code> block. The valid-token path is unchanged. Upgrading to Express 5 (which forwards
+rejected promises) was rejected for this change: it is a major-version migration with its own breaking changes, far larger than the fault.</p>
+
+<h2 id="cor-impact"><span class="step">3 ·</span> Impact Analysis</h2>
+<ul class="impact">
+<li><b>Direct:</b> the three routes that use the middleware, <code>POST /api/auth/logout</code>, <code>GET /api/auth/profile</code> and
+<code>GET /api/protected-route</code>. Requests with a valid token behave exactly as before.</li>
+<li><b>Clients:</b> requests that used to time out or break the connection now receive 401 with the standard error body
+<code>{success, message, errors}</code>, the same shape as every other error the API returns.</li>
+<li><b>Indirect:</b> with <code>next()</code> outside the <code>try</code>, an error thrown synchronously by a later handler is no longer
+caught and misreported as "Invalid or expired token"; it now reaches the error handler.</li>
+<li><b>Residual:</b> a valid token for a deleted user still passes with <code>req.user = null</code>. This is recorded, not fixed here.</li>
+</ul>
+
+<h2 id="cor-reverse"><span class="step">4 ·</span> Reverse Engineering</h2>
+<p>No description of the authentication flow exists, so it was reconstructed from <code>auth.controller.js</code> (where the cookie is
+issued) and the middleware (where it is checked):</p>
+<pre class="diagram">POST /api/auth/login ── bcrypt.compare ok ──► jwt.sign({id, role}, JWT_SECRET, 7d) ──► Set-Cookie: token=…; HttpOnly
+
+request to a protected route
+   │
+   ▼
+token cookie present? ──no──► <span class="bad">BEFORE: return new ApiError(…)   (never sent → request hangs)</span>
+   │                          <span class="good">AFTER:  401 "No token provided"</span>
+  yes
+   ▼
+jwt.verify(token) + User.findById(id) ──throws──► <span class="bad">BEFORE: throw → unhandled rejection → process exits</span>
+   │                                              <span class="good">AFTER:  401 "Invalid or expired token"</span>
+  ok
+   ▼
+req.user = user (without password) ──► next() ──► route handler</pre>
+
+<h2 id="cor-implementation"><span class="step">5 ·</span> Refactoring (Implementation)</h2>
+<div class="compare">
+<x-code ref="lab-setup" file="src/middlewares/auth.middleware.js" lines="5-19" mark="9,15,17" title="Before"></x-code>
+<x-code ref="cm-cor-01" file="src/middlewares/auth.middleware.js" lines="5-19" mark="9,14,17" title="After"></x-code>
+</div>
+<p class="compare-caption">Changed lines are highlighted. Both failure paths now <i>send</i> their response.</p>
+<x-term id="cor/diff">The complete change as a git diff.</x-term>
+<p>The two known-bug tests for this fault became normal tests. The invalid-token test, which previously had to call the middleware directly
+because the stray rejection would have broken the test run, now goes through HTTP and covers three kinds of bad token.</p>
+<x-term id="cor/tests" omit="^$|^> |○ skipped">After: the authentication tests (tag <code>cm-cor-01</code>).</x-term>
+<x-term id="cor/demo-after">After: the same requests as before receive 401 responses and the server keeps running.</x-term>
+<div class="result"><p><b>Result.</b> A fault that let any client stop the server with one request is removed by a 3-line change in one
+file. The suite grows from <x-val k="tests.lab-setup.total"></x-val> to <x-val k="tests.cm-cor-01.total"></x-val> tests, all passing,
+and known-bug tests drop from <x-val k="tests.lab-setup.knownBugs"></x-val> to <x-val k="tests.cm-cor-01.knownBugs"></x-val>.</p></div>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter ada">
+<div class="chapter-head"><h1 id="adaptive">5. Adaptive Maintenance</h1><div class="tagline">Adjust to a changed environment</div></div>
+
+<h2 id="ada-comprehension"><span class="step">1 ·</span> Program Comprehension</h2>
+<p>The project's environment moved on without it. Node.js 25 removed <code>SlowBuffer</code>, an API deprecated for years (DEP0030),
+and current Node.js releases (this machine runs 26) no longer have it. Starting the unmodified server under Node.js 26 fails before a
+single line of application code runs:</p>
+<x-term id="ada/boot-before">Before: the server cannot start on Node.js 26.</x-term>
+<p>The stack trace leads into <code>node_modules</code>, not <code>src/</code>. The application never uses <code>SlowBuffer</code>
+itself; a transitive dependency of <code>jsonwebtoken</code> does, at import time:</p>
+<div class="compare">
+<div><x-term id="ada/deps-before" size="small">The dependency chain that loads the old package.</x-term></div>
+<div><x-term id="ada/slowbuffer" size="small">The package reads <code>SlowBuffer.prototype</code> when it is loaded.</x-term></div>
+</div>
+<p>This is adaptive maintenance in its purest form: the code did not change and was not wrong when written. The runtime it depends on
+changed underneath it.</p>
+
+<h2 id="ada-change"><span class="step">2 ·</span> Change Management</h2>
+<table class="change">
+<thead><tr><th>Change id</th><th>Type</th><th>Risk</th><th>Files touched</th></tr></thead>
+<tbody><tr><td>CM-ADA-01</td><td>Adaptive</td><td>Low</td><td>package.json, package-lock.json, .nvmrc, README.md (4)</td></tr></tbody>
+</table>
+<p>Three options were considered:</p>
+<table>
+<thead><tr><th>Option</th><th>Effect</th><th>Decision</th></tr></thead>
+<tbody>
+<tr><td>Pin Node.js 24 permanently</td><td>works today; the problem returns when Node.js 24 reaches end of life</td><td>rejected</td></tr>
+<tr><td>Replace <code>jsonwebtoken</code> with <code>jose</code></td><td>modern, no legacy dependencies, but async API: changes the User model, the middleware and both controllers that issue tokens</td><td>rejected (too large)</td></tr>
+<tr><td>Upgrade <code>jsonwebtoken</code> 9.0.2 → 9.0.3</td><td>patch release; pulls in <code>jws</code> 4 / <code>jwa</code> 2, same API</td><td><b>chosen</b></td></tr>
+</tbody>
+</table>
+
+<h2 id="ada-impact"><span class="step">3 ·</span> Impact Analysis</h2>
+<ul class="impact">
+<li><b>Direct:</b> the two places that use <code>jsonwebtoken</code>: token signing in <code>User.getJwtToken</code> and verification in
+<code>isAuthenticated</code>. Both use <code>sign</code>/<code>verify</code>, whose API is unchanged in 9.0.3.</li>
+<li><b>Data:</b> tokens are still HS256 JWTs signed with the same secret, so sessions issued before the upgrade stay valid.</li>
+<li><b>Environment:</b> <code>.nvmrc</code> moves to Node.js 26.10.0 and <code>engines</code> becomes <code>&gt;=20</code>. The
+deployment's Node.js setting (Vercel) should be raised to match.</li>
+<li><b>Security side effect:</b> <code>npm audit</code> drops from <x-val k="audit.baseline.total"></x-val> to
+<x-val k="audit.final.total"></x-val> vulnerabilities, because the old <code>jws</code> 3 is gone.</li>
+</ul>
+
+<h2 id="ada-reverse"><span class="step">4 ·</span> Reverse Engineering</h2>
+<p>The fix only works if the new chain does not load the old package. <code>npm ls</code> shows that
+<code>buffer-equal-constant-time</code> is <i>still installed</i> after the upgrade, which at first looks like no fix at all. Reading
+<code>jwa</code> 2.0.1 explains it: the old package is only <code>require</code>d inside a fallback for runtimes without
+<code>crypto.timingSafeEqual</code>, which every supported Node.js version has.</p>
+<div class="compare">
+<div><x-term id="ada/deps-after" size="small">After: the old package is still in the tree…</x-term></div>
+<div><x-term id="ada/jwa" size="small">…but <code>jwa</code> 2 loads it only when <code>crypto.timingSafeEqual</code> is missing.</x-term></div>
+</div>
+<pre class="diagram">BEFORE  jsonwebtoken 9.0.2 → jws 3.2.2 → jwa 1.4.1 ──require at load──► buffer-equal-constant-time ─► <span class="bad">SlowBuffer.prototype → TypeError</span>
+AFTER   jsonwebtoken 9.0.3 → jws 4.0.1 → jwa 2.0.1 ──uses──► <span class="good">crypto.timingSafeEqual</span>   (old package: lazy fallback, never loaded)</pre>
+
+<h2 id="ada-implementation"><span class="step">5 ·</span> Refactoring (Implementation)</h2>
+<x-term id="ada/diff">The change: one dependency version, the Node.js pin and the engines range. The lock file changes only the three
+packages of the JWT chain.</x-term>
+<x-term id="ada/boot-after">After: the server starts on Node.js 26.</x-term>
+<div class="compare">
+<div><x-term id="ada/tests-node26" size="small" omit="^$|^> ">Full suite on Node.js 26.</x-term></div>
+<div><x-term id="ada/tests-node24" size="small" omit="^$|^> ">Full suite still passes on Node.js 24.</x-term></div>
+</div>
+<div class="result"><p><b>Result.</b> The application runs on current Node.js releases again and keeps working on Node.js 24. The
+change touches no application code, and all <x-val k="tests.cm-ada-01.total"></x-val> tests pass on both runtimes.</p></div>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter pre">
+<div class="chapter-head"><h1 id="preventive">6. Preventive Maintenance</h1><div class="tagline">Fix latent faults before they cause failures</div></div>
+
+<h2 id="pre-comprehension"><span class="step">1 ·</span> Program Comprehension</h2>
+<p>Following the password through the authentication code reveals three latent faults. None has caused a visible failure yet, which
+is what makes this preventive rather than corrective work, but each one leaks a credential:</p>
+<ul>
+<li><code>registerUser</code> starts with <code>console.log(req.body)</code>, writing every new user's <b>plaintext password</b> to the
+server log (on Vercel, readable by anyone with access to the project's logs).</li>
+<li><code>loginUser</code> logs <code>JSON.stringify({user, token})</code>: the <b>bcrypt hash</b> and a valid <b>session token</b>.</li>
+<li>Both endpoints return the full user document, <b>including the bcrypt hash</b>, in the response body. A leaked hash can be attacked
+offline without any rate limit.</li>
+</ul>
+<x-term id="pre/demo-before" lines="1-48">Before: the hash appears in both responses; the server log contains the plaintext password, the hash
+and the token (log truncated).</x-term>
+
+<h2 id="pre-change"><span class="step">2 ·</span> Change Management</h2>
+<table class="change">
+<thead><tr><th>Change id</th><th>Type</th><th>Risk</th><th>Files touched</th></tr></thead>
+<tbody><tr><td>CM-PRE-01</td><td>Preventive</td><td>Low</td><td>user.model.js, auth.controller.js (2)</td></tr></tbody>
+</table>
+<p>Remove the two logging statements that print credentials, and strip <code>password</code> when a User document is converted to JSON,
+in the schema itself. Deleting the field in each controller was rejected: it would fix today's two routes but not the next route that
+returns a user. A schema-level rule protects routes that do not exist yet, which is the point of preventive maintenance.</p>
+
+<h2 id="pre-impact"><span class="step">3 ·</span> Impact Analysis</h2>
+<ul class="impact">
+<li><b>Direct:</b> every response that serialises a User: register, login, profile and the protected route.</li>
+<li><b>Unaffected:</b> storage and authentication. <code>comparePassword</code> reads the field from the document, not from JSON, and
+the pre-save hashing hook is untouched.</li>
+<li><b>Clients:</b> no legitimate client needs the hash; the token is still returned and set as a cookie.</li>
+<li><b>Operations:</b> the server log loses the request-body line. <code>loginUser</code> still logs the email address (personal data,
+recorded as residual).</li>
+</ul>
+
+<h2 id="pre-reverse"><span class="step">4 ·</span> Reverse Engineering</h2>
+<p>A source-to-sink data-flow map of the password, recovered from the controller, the model's hooks and Express's JSON serialisation:</p>
+<pre class="diagram">req.body.password ─┬─► console.log(req.body) ..................... <span class="bad">log sink: plaintext password</span>     <span class="good">✓ removed</span>
+                   └─► new User({…}) ─► pre("save"): bcrypt.hash ─► MongoDB users.password (hash)
+                                                                       │
+user document ─────┬─► res.json({ user, token }) ................. <span class="bad">response sink: hash</span>              <span class="good">✓ toJSON drops password</span>
+                   └─► console.log(JSON.stringify({ user, token })) <span class="bad">log sink: hash + JWT</span>             <span class="good">✓ removed</span></pre>
+
+<h2 id="pre-implementation"><span class="step">5 ·</span> Refactoring (Implementation)</h2>
+<x-term id="pre/diff">The change as a git diff.</x-term>
+<p>Four tests were written for the new rule. Run against the previous version's source, all four fail; with the change, all pass:</p>
+<x-term id="pre/tests-before" grep="✓|✕|Tests:|●" lines="1-14">Before: the new tests against the source of <code>cm-ada-01</code> (failure details omitted).</x-term>
+<x-term id="pre/tests-after" omit="^$|^> |○ skipped">After: the same tests on <code>cm-pre-01</code>.</x-term>
+<x-term id="pre/demo-after">After: no hash in either response; the server log holds no password, hash or token.</x-term>
+<div class="result"><p><b>Result.</b> Three credential leaks are closed, and the schema rule covers every future route that returns a
+user. Tests: <x-val k="tests.cm-pre-01.total"></x-val>, all passing; known-bug tests: <x-val k="tests.cm-pre-01.knownBugs"></x-val>.</p></div>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter per">
+<div class="chapter-head"><h1 id="perfective">7. Perfective Maintenance</h1><div class="tagline">Improve structure without changing behaviour</div></div>
+
+<h2 id="per-comprehension"><span class="step">1 ·</span> Program Comprehension</h2>
+<p>The code has two competing error-handling mechanisms. <code>asyncHandler</code> forwards any rejected promise to the global error
+handler in <code>app.js</code>, but that handler ignores <code>ApiError</code> and always answers 500. To get the right status codes
+anyway, three controllers wrap their entire body in the same hand-written <code>try/catch</code> that rebuilds the error and sends it.
+The clone detector finds the copies:</p>
+<x-term id="per/jscpd-before">Before: two clone pairs of the 8-line catch block (and one acceptable clone in the models, discussed in §16).</x-term>
+<p>The duplication is a design fault, not just untidiness: correct behaviour depends on remembering to copy the block. <code>registerUser</code>
+has no copy, so its "user already exists" error, an <code>ApiError(400)</code>, reaches the global handler and becomes a 500.
+<code>getQuestions</code> passes its 404 message in the wrong argument and relies on the catch block's fallback text.</p>
+
+<h2 id="per-change"><span class="step">2 ·</span> Change Management</h2>
+<table class="change">
+<thead><tr><th>Change id</th><th>Type</th><th>Risk</th><th>Files touched</th></tr></thead>
+<tbody><tr><td>CM-PER-01</td><td>Perfective</td><td>Medium (every error path)</td><td>app.js, auth.controller.js, question.controller.js (3)</td></tr></tbody>
+</table>
+<p>Make the global handler the single place where errors become responses: it sends an <code>ApiError</code> with its own status and
+body, and answers anything else with a generic 500 in the same shape. Then delete the three copied <code>try/catch</code> blocks, since
+<code>asyncHandler</code> already forwards errors. Fix the argument order of the one 404 that relied on the old fallback.</p>
+
+<h2 id="per-impact"><span class="step">3 ·</span> Impact Analysis</h2>
+<p>Every error path in the API is affected, so each was listed and checked:</p>
+<table>
+<thead><tr><th>Error path</th><th>Before</th><th>After</th></tr></thead>
+<tbody>
+<tr><td>login: missing fields / wrong credentials</td><td>400 / 401 via local catch</td><td>same status and body via global handler</td></tr>
+<tr><td>question: empty field</td><td>400 via local catch</td><td>same</td></tr>
+<tr><td>register: duplicate email</td><td>500 <code>{message: "Something went wrong!"}</code></td><td>400 <code>{success: false, message: "A user with this email already exists", errors: …}</code></td></tr>
+<tr><td>questions: nothing found</td><td>404 "Error occurred while fetching questions"</td><td>404 "No questions found" / "No questions found matching …"</td></tr>
+<tr><td>unexpected error (e.g. Mongoose validation)</td><td>500 with the internal error message and object</td><td>500 <code>{success: false, message: "Something went wrong!", errors: []}</code>; stack trace logged on the server</td></tr>
+</tbody>
+</table>
+<p>Success paths are unchanged (covered by the existing tests). The last row is a deliberate behaviour change with a security benefit:
+internal error details no longer reach clients.</p>
+
+<h2 id="per-reverse"><span class="step">4 ·</span> Reverse Engineering</h2>
+<pre class="diagram">BEFORE                                                    AFTER
+controller ─ try { … throw ApiError } ─┐                  controller ─ throw ApiError ─┐
+                catch → new ApiError(  │  copied 3×                                     │
+                  status||500, …)      │                  asyncHandler ─ .catch(next) ──┤
+                .send(res) ◄───────────┘                                                ▼
+                                                          app.js error handler
+registerUser ─ throw ApiError(400) ──► asyncHandler        ├─ ApiError?  → err.send(res)   (status kept)
+               ──► app.js handler ──► <span class="bad">500 always</span>             └─ otherwise  → 500 generic, stack logged</pre>
+
+<h2 id="per-implementation"><span class="step">5 ·</span> Refactoring (Implementation)</h2>
+<div class="compare">
+<x-code ref="cm-pre-01" file="src/app.js" lines="21-27" title="Before"></x-code>
+<x-code ref="cm-per-01" file="src/app.js" lines="22-31" mark="24-28" title="After"></x-code>
+</div>
+<p class="compare-caption">The global error handler, before and after.</p>
+<x-term id="per/diff-stat">Size of the change: the three controllers lose their copied blocks.</x-term>
+<x-term id="per/diff" lines="1-80" size="small">The change, ignoring whitespace (<code>-w</code>): removing each <code>try</code> re-indents
+the whole function, which would otherwise hide the real edits.</x-term>
+<x-term id="per/jscpd-after">After: the catch-block clones are gone; only the model clone remains.</x-term>
+<x-term id="per/tests-before" grep="●|Tests:">Before: the suite of <code>cm-per-01</code> run against the source of <code>cm-pre-01</code>.
+Three expectations fail: the duplicate-email status and the two 404 messages.</x-term>
+<x-term id="per/tests-after" omit="^$|^> ">After: all tests pass.</x-term>
+<div class="result"><p><b>Result.</b> Error handling now lives in one place. Clones drop from <x-val k="clones.cm-pre-01.clones"></x-val>
+to <x-val k="clones.cm-per-01.clones"></x-val>; the cyclomatic complexity of <code>getQuestions</code> falls from
+<x-val k="metrics.baseline.getQuestions"></x-val> to <x-val k="metrics.final.getQuestions"></x-val> and of <code>loginUser</code> from
+<x-val k="metrics.baseline.loginUser"></x-val> to <x-val k="metrics.final.loginUser"></x-val> (§12). One known bug is fixed as a
+consequence: all <x-val k="tests.cm-per-01.total"></x-val> tests pass, with <x-val k="tests.cm-per-01.knownBugs"></x-val> known-bug
+tests left.</p></div>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter">
+<div class="chapter-head"><h1 id="summary">8. Summary &amp; Conclusion</h1><div class="tagline">Section 8</div></div>
+
+<table>
+<thead><tr><th>Change</th><th>Category</th><th>Problem</th><th>Change made</th><th class="num">Files</th></tr></thead>
+<tbody>
+<tr><td>CM-COR-01</td><td>Corrective</td><td>one bad cookie terminates the server; missing cookie hangs</td><td>send 401s in the auth middleware</td><td class="num">1</td></tr>
+<tr><td>CM-ADA-01</td><td>Adaptive</td><td>server cannot start on Node.js ≥ 25</td><td>jsonwebtoken 9.0.2 → 9.0.3, Node.js 26 pin</td><td class="num">4</td></tr>
+<tr><td>CM-PRE-01</td><td>Preventive</td><td>password, hash and token leak via logs and responses</td><td>schema <code>toJSON</code> rule, remove credential logs</td><td class="num">2</td></tr>
+<tr><td>CM-PER-01</td><td>Perfective</td><td>copied try/catch blocks, error handler ignores status</td><td>single error handler, clones removed</td><td class="num">3</td></tr>
+</tbody>
+</table>
+
+<table>
+<thead><tr><th>Version</th><th class="num">Tests</th><th class="num">Passing</th><th class="num">Known-bug tests</th></tr></thead>
+<tbody>
+<tr><td><code>lab-setup</code></td><td class="num"><x-val k="tests.lab-setup.total"></x-val></td><td class="num"><x-val k="tests.lab-setup.passed"></x-val></td><td class="num"><x-val k="tests.lab-setup.knownBugs"></x-val></td></tr>
+<tr><td><code>cm-cor-01</code></td><td class="num"><x-val k="tests.cm-cor-01.total"></x-val></td><td class="num"><x-val k="tests.cm-cor-01.passed"></x-val></td><td class="num"><x-val k="tests.cm-cor-01.knownBugs"></x-val></td></tr>
+<tr><td><code>cm-ada-01</code></td><td class="num"><x-val k="tests.cm-ada-01.total"></x-val></td><td class="num"><x-val k="tests.cm-ada-01.passed"></x-val></td><td class="num"><x-val k="tests.cm-ada-01.knownBugs"></x-val></td></tr>
+<tr><td><code>cm-pre-01</code></td><td class="num"><x-val k="tests.cm-pre-01.total"></x-val></td><td class="num"><x-val k="tests.cm-pre-01.passed"></x-val></td><td class="num"><x-val k="tests.cm-pre-01.knownBugs"></x-val></td></tr>
+<tr><td><code>cm-per-01</code></td><td class="num"><x-val k="tests.cm-per-01.total"></x-val></td><td class="num"><x-val k="tests.cm-per-01.passed"></x-val></td><td class="num"><x-val k="tests.cm-per-01.knownBugs"></x-val></td></tr>
+</tbody>
+</table>
+<p class="caption">Table 3. Test suite at each tagged version (evidence <code>tests/&lt;tag&gt;.txt</code>; versions before
+<code>cm-ada-01</code> are run on Node.js 24 because they cannot start on 26).</p>
+
+<h2 id="residual">Residual findings</h2>
+<p>Comprehension and analysis surfaced more problems than one change per category can address. They are recorded here rather than fixed
+silently, so that each change above stays small and traceable:</p>
+<ul>
+<li><b>Tags are never stored.</b> <code>createQuestion</code> puts <code>tags</code> inside the translation instead of on the question,
+so tag filtering never finds questions created through the API (two <code>test.failing</code> tests; confirmed at runtime in §15).</li>
+<li><b>Missing fields pass validation.</b> <code>field?.trim() === ""</code> is false for <code>undefined</code>, so absent fields reach
+Mongoose and produce a 500 instead of a 400.</li>
+<li><b>Unescaped search.</b> <code>?search=</code> goes straight into <code>$regex</code>: special characters cause a 500, and crafted
+patterns risk regular-expression denial of service.</li>
+<li><b>No authorisation on question creation.</b> <code>POST /api/questions/add</code> is open to anonymous clients.</li>
+<li><b>Lint findings</b> (§12): a duplicate <code>secure</code> key in the login cookie options makes the intended
+<code>NODE_ENV</code>-dependent setting dead code; two unused variables.</li>
+<li><b>Dependencies:</b> <code>npm audit</code> still reports <x-val k="audit.final.total"></x-val> vulnerabilities
+(<x-val k="audit.final.critical"></x-val> critical, in <code>mongoose</code> and <code>proxy-addr</code>; others in
+<code>express</code>, <code>body-parser</code>, <code>cloudinary</code>, <code>lodash</code>, <code>path-to-regexp</code>,
+<code>qs</code>). All have fixed versions available.</li>
+<li><b>Smaller items:</b> the login email is logged; a token for a deleted user passes authentication with <code>req.user = null</code>;
+<code>cors()</code> with default options cannot serve credentialed cross-origin requests from a separate frontend.</li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+<p>Each category produced a change of a different character: a fault visible to every user (corrective), a failure caused only by the
+environment moving on (adaptive), risks that had not yet caused harm (preventive), and a structural weakness that was quietly producing
+wrong status codes (perfective). The five-step process kept each change small: comprehension located the cause, impact analysis bounded
+what could break, and reverse engineering recovered the design knowledge the change depended on. The test-first approach made every
+claim checkable: each fix is a known-bug test turning into a passing test, at a tagged commit anyone can check out.</p>
+</section>
+
+<section class="chapter flow">
+<div class="chapter-head"><h1 id="tools">9. Tools Used &amp; References</h1><div class="tagline">Section 9</div></div>
+<table>
+<thead><tr><th>Tool</th><th>Version</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Node.js / npm</td><td>26.10.0 and 24.21.0 / 11.19.1</td><td>runtime; 24 for versions before CM-ADA-01</td></tr>
+<tr><td>MongoDB (Docker)</td><td>7.0.45</td><td>database for the server and the tests</td></tr>
+<tr><td>Jest + supertest</td><td>30.5.2 + 7.3.1</td><td>tests, V8 code coverage</td></tr>
+<tr><td>ESLint / espree</td><td>10.13.0 / 11.2.0</td><td>lint findings; JavaScript parser for the AST, metrics and slicing tools</td></tr>
+<tr><td>jscpd</td><td>5.4.2</td><td>clone detection</td></tr>
+<tr><td>git</td><td>—</td><td>tags per change, diffs, worktrees for capturing each version</td></tr>
+<tr><td>report/tools/*.mjs</td><td>this repository</td><td>AST dump, metrics, slicer, workload tracer, CPU-profile summary</td></tr>
+<tr><td>Chromium (headless)</td><td>—</td><td>printing this report to PDF</td></tr>
+</tbody>
+</table>
+<ol class="small">
+<li>ISO/IEC/IEEE 14764:2022, <i>Software engineering: Software life cycle processes: Maintenance</i>.</li>
+<li>Course material: CSE 4802 Lab 1 (Static and Dynamic Analysis; Program Slicing), Lab 3 (Transformation Tools), Lab 6 (Code Clone Detection).</li>
+<li>K. Tran, K. Nguyen, C. Borcea, N. Phan, "Program Structure-aware Language Models: Targeted Software Testing beyond Textual Semantics", arXiv:2604.17715, 2026 (Lab 2).</li>
+<li>Node.js deprecations, DEP0030 <code>SlowBuffer</code>: https://nodejs.org/api/deprecations.html</li>
+<li>Express 4 error handling (promises returned by middleware are not handled): https://expressjs.com/en/guide/error-handling.html</li>
+<li>MongoDB issue SERVER-121912 (Linux 6.19+ incompatibility): https://jira.mongodb.org/browse/SERVER-121912</li>
+<li>Subject repository: https://github.com/notAvailable73/backend-Nodejs (forked from suffahUniversity/backend-Nodejs).</li>
+</ol>
+</section>
+
+<!-- ======================================================================= -->
+<div class="part-title">Part 2 · Static &amp; Dynamic Analysis and Program Slicing</div>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-overview">10. Overview &amp; Methodology</h1><div class="tagline">Section 10</div></div>
+<p>Part 2 applies the analysis techniques from the lab sessions to the same codebase. The lab examples use Python tools; this project
+is JavaScript, so each technique was mapped to an equivalent for Node.js. Where no suitable tool existed, a small, readable script was
+written in <code>report/tools/</code> so that every definition (what counts as a line, a decision point, a dependency) is explicit and
+can be explained.</p>
+<table>
+<thead><tr><th>Technique (lab tool)</th><th>Used here</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>AST generation (Python <code>ast.dump</code>, AST Explorer)</td><td>espree + <code>tools/ast.mjs</code></td><td>espree is ESLint's parser and produces the standard ESTree AST; the dump format mirrors <code>ast.dump</code></td></tr>
+<tr><td>Metrics (radon, SonarQube)</td><td><code>tools/metrics.mjs</code> + ESLint recommended rules</td><td>size and McCabe complexity with documented counting rules; ESLint for defect-prone patterns</td></tr>
+<tr><td>Dynamic analysis: tracing (<code>sys.settrace</code>), coverage</td><td>Jest with V8 coverage</td><td>V8 records executed code natively, without instrumenting the source</td></tr>
+<tr><td>Program slicing (IntelliJ "Find usages" / "Analyze data flow")</td><td><code>tools/slice.mjs</code>, plus one-test coverage for the dynamic slice</td><td>scriptable and repeatable, prints the slice on the source</td></tr>
+<tr><td>Loguru, PySnooper</td><td><code>tools/workload.mjs --trace</code></td><td>request log plus every MongoDB operation, without editing application code</td></tr>
+<tr><td>cProfile, SnakeViz, VizTracer</td><td><code>node --cpu-prof</code> + <code>tools/profile.mjs</code></td><td>V8's built-in sampling profiler; summary table and icicle chart</td></tr>
+<tr><td>Code clone detection (Lab 6)</td><td>jscpd 5.4.2</td><td>token-based detector with JavaScript support and machine-readable output</td></tr>
+<tr><td>Structure-aware test generation (GLMTest, Lab 2)</td><td>idea applied by hand</td><td>no model was trained; the <code>test.failing</code> tests target specific risky branches, which is the paper's goal</td></tr>
+</tbody>
+</table>
+<p>Unless stated otherwise, analyses compare the original code (<code>baseline</code>, or <code>lab-setup</code> where tests are
+needed; their <code>src/</code> is identical) with the final version <code>cm-per-01</code>.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-ast">11. Static Analysis A: AST Generation</h1><div class="tagline">Section 11</div></div>
+<p>An Abstract Syntax Tree represents source code as a tree: each node is a construct (a declaration, a call, an identifier) and each
+edge says which construct contains which. Static analysis tools work on this tree rather than on text. The first statement of the
+authentication middleware, dumped in the same style as Python's <code>ast.dump</code>:</p>
+<x-term id="part2/ast-dump">One statement and its AST.</x-term>
+<p><b>Reading the output.</b> <code>const token = req.cookies.token;</code> is a <code>VariableDeclaration</code> of kind
+<code>const</code> with one <code>VariableDeclarator</code>. Its <code>id</code> is the name being defined (<code>token</code>) and its
+<code>init</code> is the value: a <code>MemberExpression</code> whose object is another <code>MemberExpression</code>
+(<code>req.cookies</code>). Property access nests from the inside out. The slicer in §14 uses exactly this distinction: <code>id</code>
+is a definition, identifiers inside <code>init</code> are uses.</p>
+<x-term id="part2/ast-outline" lines="1-62" size="small">The whole <code>isAuthenticated</code> function as an indented tree (final version).
+The <code>IfStatement</code> and <code>TryStatement</code> nodes are the branches discussed in §4.</x-term>
+<div class="compare">
+<div><x-term id="part2/ast-stats-baseline" size="small">Node types at <code>baseline</code>.</x-term></div>
+<div><x-term id="part2/ast-stats-final" size="small">Node types at <code>cm-per-01</code>.</x-term></div>
+</div>
+<p><b>Insight.</b> The tree shrinks by about 100 nodes. Fewer <code>Identifier</code>, <code>MemberExpression</code> and
+<code>NewExpression</code> nodes reflect the removed catch blocks, each of which built an <code>ApiError</code> from
+<code>error.statusCode || 500</code>, <code>error.errors || error</code> and <code>error.message || …</code>. One extra
+<code>ImportDeclaration</code> is the error handler's new import of <code>ApiError</code>.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-metrics">12. Static Analysis B: Metrics Calculation</h1><div class="tagline">Section 12</div></div>
+<p><code>tools/metrics.mjs</code> computes, per file, physical lines, source lines (SLOC: lines holding code, not blank and not only
+comments), comment lines and functions; and per function the McCabe cyclomatic complexity (CC): 1 plus the number of decision points
+(<code>if</code>, <code>?:</code>, loops, <code>case</code>, <code>catch</code>, <code>&amp;&amp;</code>, <code>||</code>,
+<code>??</code>). CC is the number of independent paths through a function, and so a lower bound on the tests needed to cover it.</p>
+<x-term id="part2/metrics-baseline">Metrics at <code>baseline</code>.</x-term>
+<x-term id="part2/metrics-final" lines="19-29">Metrics at <code>cm-per-01</code> (per-file table omitted).</x-term>
+<div class="kv">
+<div><div class="k">SLOC</div><div class="v"><x-val k="metrics.final.sloc"></x-val></div><div class="d">from <x-val k="metrics.baseline.sloc"></x-val></div></div>
+<div><div class="k">Max CC</div><div class="v"><x-val k="metrics.final.maxComplexity"></x-val></div><div class="d">from <x-val k="metrics.baseline.maxComplexity"></x-val></div></div>
+<div><div class="k">Mean CC</div><div class="v"><x-val k="metrics.final.meanComplexity"></x-val></div><div class="d">from <x-val k="metrics.baseline.meanComplexity"></x-val></div></div>
+<div><div class="k">Functions</div><div class="v"><x-val k="metrics.final.functions"></x-val></div><div class="d">from <x-val k="metrics.baseline.functions"></x-val></div></div>
+</div>
+<p><b>Insight.</b> Most of the complexity sat in the copied catch blocks: each <code>||</code> fallback is a decision point, so removing
+them cut <code>getQuestions</code> from <x-val k="metrics.baseline.getQuestions"></x-val> to
+<x-val k="metrics.final.getQuestions"></x-val> and <code>loginUser</code> from <x-val k="metrics.baseline.loginUser"></x-val> to
+<x-val k="metrics.final.loginUser"></x-val>. The function count rises by one: the new <code>toJSON</code> transform from CM-PRE-01.</p>
+
+<h2 id="p2-eslint">Lint findings</h2>
+<div class="compare">
+<div><x-term id="part2/eslint-baseline" size="small">ESLint (recommended rules) at <code>baseline</code>.</x-term></div>
+<div><x-term id="part2/eslint-final" size="small">The same three findings remain at <code>cm-per-01</code>.</x-term></div>
+</div>
+<p><b>Insight.</b> <code>no-dupe-keys</code> is a real defect. The login cookie options set
+<code>secure: process.env.NODE_ENV === "production"</code> and then <code>secure: true</code>; the second key wins, so the
+environment-dependent rule the author wrote never takes effect. The two <code>no-unused-vars</code> findings are harmless (Express needs
+the four-argument signature to recognise an error handler). None of the three was in scope for the four changes, so they are listed as
+residual (§8).</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-coverage">13. Dynamic Analysis: Code Coverage</h1><div class="tagline">Section 13</div></div>
+<p>Coverage records which code actually ran while the test suite executed: the dynamic counterpart of reading the code. V8 collects it
+natively; Jest maps it back to source files. All files under <code>src/</code> are included, including those no test imports, so that
+untested code shows up as 0% instead of being silently left out.</p>
+<x-term id="part2/coverage-baseline" grep="[|]|^Tests:" size="small">Coverage of the baseline suite (tag <code>lab-setup</code>).</x-term>
+<x-term id="part2/coverage-final" grep="[|]|^Tests:" size="small">Coverage of the final suite (tag <code>cm-per-01</code>).</x-term>
+<table>
+<thead><tr><th>Measure</th><th class="num">lab-setup</th><th class="num">cm-per-01</th></tr></thead>
+<tbody>
+<tr><td>Lines / statements</td><td class="num"><x-val k="coverage.baseline.lines" format="pct"></x-val></td><td class="num"><x-val k="coverage.final.lines" format="pct"></x-val></td></tr>
+<tr><td>Branches</td><td class="num"><x-val k="coverage.baseline.branches" format="pct"></x-val></td><td class="num"><x-val k="coverage.final.branches" format="pct"></x-val></td></tr>
+<tr><td>Functions</td><td class="num"><x-val k="coverage.baseline.functions" format="pct"></x-val></td><td class="num"><x-val k="coverage.final.functions" format="pct"></x-val></td></tr>
+</tbody>
+</table>
+<p><b>Insight.</b> Line coverage barely moves while branch coverage rises. The removed catch blocks were mostly <i>covered lines</i> but
+<i>uncovered branches</i> (the <code>||</code> fallbacks rarely ran), so deleting them lowers the line denominator and raises the branch
+ratio. Percentages compare different denominators and should be read as "how much of this version ran", not as progress on a fixed
+scale. The 0% files are the real finding: <code>server.js</code>, <code>config/database.js</code>, <code>multer.middleware.js</code>,
+<code>cloudinary.js</code> and <code>seminar.model.js</code> are never loaded by any test. The last three are not used by any route at
+all: candidates for removal or for the next feature. <code>protected.routes.js</code> lines 7–14 show that no test reaches the protected
+route's success path.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-slicing">14. Program Slicing (Static &amp; Dynamic)</h1><div class="tagline">Section 14</div></div>
+<p>A <b>slice</b> is the set of statements that can affect the value of a variable at a chosen point, the <i>slicing criterion</i>.
+A <b>static</b> slice considers every possible execution; a <b>dynamic</b> slice only the statements that affected the value in one
+particular execution, so it is usually smaller. <code>tools/slice.mjs</code> computes backward slices inside a function by following
+two kinds of dependency:</p>
+<ul>
+<li><b>Data:</b> a statement that uses variable <i>v</i> depends on earlier statements that define <i>v</i> (for
+<code>query.tags = …</code>, the object <code>query</code> counts as both used and defined).</li>
+<li><b>Control:</b> a statement depends on the <code>if</code> or loop test that decides whether it runs, including an earlier
+<code>if (…) { return/throw }</code> that can skip it.</li>
+</ul>
+<p><b>Criterion:</b> the MongoDB query object <code>query</code> at line <x-val k="slice.criterion"></x-val> of
+<code>getQuestions</code>, where it is passed to <code>Question.find</code>. This is the question a maintainer asks when a search
+returns the wrong questions: <i>which code decides what is searched for?</i></p>
+<x-term id="part2/slice-static">Static slice: everything that may shape the query.</x-term>
+<p>The static slice keeps both filters, the tag filter (lines 36–38) and the title search (42–43), and the destructuring of
+<code>req.query</code> that feeds them; logging, the 404 check and the response are excluded. For the dynamic slice, one test, "searches titles
+case-insensitively" (<code>GET /api/questions?search=PRAYER</code>), was run alone with coverage, and the slicer was restricted to the
+statements that executed:</p>
+<x-term id="part2/slice-run" grep="^Tests:" command="npm test -- tests/questions.test.js -t 'searches titles' --coverage">Running the single test that defines the execution.</x-term>
+<x-term id="part2/slice-dynamic" lines="1-27">Dynamic slice for that execution (· marks lines that did not run).</x-term>
+<p><b>Insight.</b> The dynamic slice drops the tag branch completely. The <code>if (tags)</code> test <i>did</i> run (it evaluated to
+false) but is not in the slice, because nothing it controls contributed to <code>query</code>. That is the defining difference from
+coverage: coverage says what ran, the slice says what <i>mattered</i>. In maintenance terms, a bug report about title search can be
+investigated in five statements instead of twelve. The same slice explains the residual tags bug: <code>query.tags</code> filters the
+top-level <code>tags</code> field, which the static slice of <code>createQuestion</code> would show is never written.</p>
+<p class="small muted">Limitations: the slicer works inside one function, does not do kill analysis (every earlier definition counts),
+and treats a method call <code>obj.m(…)</code> as possibly modifying <code>obj</code>. These over-approximate, so the slices may be
+larger than necessary but do not miss statements in code of this shape.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-runtime">15. Runtime Analysis: Tracing &amp; Profiling</h1><div class="tagline">Transformation tools (Lab 3)</div></div>
+<p>The lab's transformation tools turn a running program into a readable form: a log (Loguru), a line-by-line trace (PySnooper), a
+timeline or a chart of where time goes (VizTracer, cProfile + SnakeViz). For this server, the useful unit of execution is an HTTP request
+and the database work it causes. <code>tools/workload.mjs</code> loads the unmodified application, wraps it in a request logger, enables
+Mongoose's query hook, and replays a scripted session. Passwords' hashes and tokens are masked in the output.</p>
+<x-term id="part2/trace" size="small">Request/query trace of the final version, in Loguru's <code>time | level | message</code> format.</x-term>
+<p><b>Insights from the trace.</b></p>
+<ul>
+<li>Registration costs three database operations, including a <code>createIndex</code> issued by Mongoose on the first write to
+<code>users</code>; the unique e-mail index is created lazily, not by a migration.</li>
+<li>Login takes ~70 ms against ~2–5 ms for every other request, all of it before the database reply is used: password hashing (see the
+profile below).</li>
+<li>The profile lookup excludes the password at the query level (<code>projection: {password: 0}</code>), and the forged token is
+rejected in under a millisecond with <b>no</b> database query: the CM-COR-01 path.</li>
+<li>The <code>insertOne</code> for the new question stores <code>"tags": []</code>, and the next request's tag query returns 404. This
+is the residual tags bug observed at runtime, not just inferred from the code.</li>
+</ul>
+
+<h2 id="p2-profile">CPU profiling</h2>
+<p>V8's sampling profiler (<code>node --cpu-prof</code>) records the call stack every millisecond. A workload of 30 rounds of login,
+profile, add question and search was profiled; <code>tools/profile.mjs</code> summarises the profile by package and function (the cProfile
+view) and draws an icicle chart of the call tree (the SnakeViz view).</p>
+<x-term id="part2/profile" size="small">Profile summary of the final version.</x-term>
+<x-svg id="part2/profile-icicle">Icicle chart of the CPU profile. Each box is a function in a call path; its width is the time spent in it
+and its callees; callees sit beneath their caller. Orange: application code (<code>src/</code>).</x-svg>
+<p><b>Insight.</b> <x-val k="profile.bcryptShare"></x-val>% of CPU time is spent inside <code>bcryptjs</code>, and
+<code>comparePassword</code>, called once per login, accounts for <x-val k="profile.comparePasswordShare"></x-val>% of the whole
+workload. The application's own code is negligible. This is by design: bcrypt with cost factor 10 is <i>meant</i> to be slow, to make
+stolen hashes expensive to crack. It is not a defect, but it is a capacity limit worth knowing. Login throughput on one core is
+bounded at roughly a dozen per second, and <code>bcryptjs</code> is a pure-JavaScript implementation that blocks the event loop while
+hashing. A native binding (<code>bcrypt</code>) or moving hashing to a worker thread would be the perfective options if login load grew.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-clones">16. Code Clone Detection</h1><div class="tagline">Lab 6</div></div>
+<p><b>Tool overview.</b> jscpd tokenises each file, slides a window over the token stream, and hashes each window (Rabin–Karp); windows
+with equal hashes in different places are reported as clones once they reach the minimum size. Because it compares tokens, not
+characters, formatting differences do not hide a clone. It was chosen for its JavaScript support, its precise locations, and its JSON
+output (used for the numbers below). Thresholds: at least 5 lines and 30 tokens.</p>
+<p><b>Method.</b> jscpd was run on <code>src/</code> at <code>baseline</code>, the clones were inspected, the refactoring was applied
+(CM-PER-01), and the same command was run on <code>cm-per-01</code>.</p>
+<x-term id="part2/jscpd-baseline">Results at <code>baseline</code>.</x-term>
+<p><b>Analysis.</b></p>
+<table>
+<thead><tr><th>Clone</th><th>Locations</th><th>Type</th><th>Impact</th></tr></thead>
+<tbody>
+<tr><td>catch-and-resend block</td><td>auth.controller.js (loginUser) ↔ question.controller.js (createQuestion, getQuestions)</td><td>Type 1 (exact copy) up to identifiers</td><td><b>Harmful</b>: behaviour depends on copying it, and a missing copy (registerUser) already causes wrong status codes</td></tr>
+<tr><td>translation <code>language</code> field</td><td>question.model.js ↔ seminar.model.js</td><td>Type 1</td><td>Low: two schemas declaring the same field; a change to the language list must be made twice</td></tr>
+</tbody>
+</table>
+<p><b>Proposed solutions.</b> For the catch block: centralise error handling in the error-handling middleware and delete the copies. This
+was implemented as CM-PER-01. For the schema field: extract a shared <code>languageField</code> definition (e.g.
+<code>models/fields.js</code>) used by both translation schemas; left as a recommendation, since the seminar model has no routes yet.</p>
+<x-term id="part2/jscpd-final">Results at <code>cm-per-01</code>.</x-term>
+<p><b>Conclusion.</b> Duplicated lines fall from <x-val k="clones.baseline.duplicatedLines"></x-val>
+(<x-val k="clones.baseline.percentage" format="pct"></x-val>) to <x-val k="clones.final.duplicatedLines"></x-val>
+(<x-val k="clones.final.percentage" format="pct"></x-val>). The lesson from this codebase is that clone count alone understates the
+risk: the harmful clone was only 8 lines, but it encoded a rule that every controller had to follow by hand.</p>
+</section>
+
+<section class="chapter">
+<div class="chapter-head"><h1 id="p2-summary">17. Summary &amp; Caveats</h1><div class="tagline">Section 17</div></div>
+<table>
+<thead><tr><th>Measure</th><th class="num">Before</th><th class="num">After</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Tests (passing)</td><td class="num"><x-val k="tests.lab-setup.passed"></x-val></td><td class="num"><x-val k="tests.cm-per-01.passed"></x-val></td><td>Jest</td></tr>
+<tr><td>Known-bug tests</td><td class="num"><x-val k="tests.lab-setup.knownBugs"></x-val></td><td class="num"><x-val k="tests.cm-per-01.knownBugs"></x-val></td><td>test files</td></tr>
+<tr><td>Source lines (SLOC)</td><td class="num"><x-val k="metrics.baseline.sloc"></x-val></td><td class="num"><x-val k="metrics.final.sloc"></x-val></td><td>metrics.mjs</td></tr>
+<tr><td>Max / mean cyclomatic complexity</td><td class="num"><x-val k="metrics.baseline.maxComplexity"></x-val> / <x-val k="metrics.baseline.meanComplexity"></x-val></td><td class="num"><x-val k="metrics.final.maxComplexity"></x-val> / <x-val k="metrics.final.meanComplexity"></x-val></td><td>metrics.mjs</td></tr>
+<tr><td>Branch coverage</td><td class="num"><x-val k="coverage.baseline.branches" format="pct"></x-val></td><td class="num"><x-val k="coverage.final.branches" format="pct"></x-val></td><td>Jest / V8</td></tr>
+<tr><td>Clones (duplicated lines)</td><td class="num"><x-val k="clones.baseline.clones"></x-val> (<x-val k="clones.baseline.duplicatedLines"></x-val>)</td><td class="num"><x-val k="clones.final.clones"></x-val> (<x-val k="clones.final.duplicatedLines"></x-val>)</td><td>jscpd</td></tr>
+<tr><td>ESLint findings</td><td class="num"><x-val k="eslint.baseline"></x-val></td><td class="num"><x-val k="eslint.final"></x-val></td><td>ESLint</td></tr>
+<tr><td>npm audit vulnerabilities</td><td class="num"><x-val k="audit.baseline.total"></x-val></td><td class="num"><x-val k="audit.final.total"></x-val></td><td>npm</td></tr>
+</tbody>
+</table>
+<p><b>Caveats.</b></p>
+<ul>
+<li>Coverage shows what ran, not that it is correct; and percentages of two versions have different denominators (§13).</li>
+<li>Cyclomatic complexity counts decision points; it says nothing about how hard the code is to read.</li>
+<li>The slicer is an approximation (§14); results were checked by hand against the source.</li>
+<li>Profile numbers depend on the machine and the workload; the shares (bcrypt dominates) are stable, the milliseconds are not.</li>
+<li>jscpd only finds clones above its thresholds and does not find semantic (Type 4) clones.</li>
+<li>Timestamps, ids and timings in the terminal panes change on every regeneration; the conclusions do not.</li>
+</ul>
+</section>
+
+<!-- ======================================================================= -->
+<section class="chapter">
+<div class="chapter-head"><h1 id="appendix">Appendix A. Reproduction</h1><div class="tagline">Regenerate everything</div></div>
+<p>Everything in this report, including every terminal pane, every number and the PDF, is produced by two scripts from the tagged
+commits. Requirements: git, Docker, nvm with Node.js 24.21.0 and 26.10.0, Chromium or Chrome, and poppler-utils for the page
+numbers in the contents.</p>
+<pre class="diagram">git clone https://github.com/notAvailable73/backend-Nodejs.git && cd backend-Nodejs
+git checkout lab/maintenance
+nvm install 24.21.0 && nvm install 26.10.0 && nvm use
+npm ci
+npm run report            # = report:capture (runs every command) + report:build (HTML + PDF)
+
+npm run report:capture -- --only cor/     # re-capture one section
+npm run report:build                      # rebuild the PDF after editing report/template/report.html</pre>
+<p><code>report:capture</code> checks out each tag into its own git worktree (under <code>~/.cache/jamiya-report/</code>), runs
+<code>npm ci</code> there, starts MongoDB with Docker Compose, and runs each command below, saving its output to
+<code>report/evidence/&lt;id&gt;.txt</code> and the numbers quoted in the text to <code>report/evidence/values.json</code>.
+<code>report:build</code> fills the template with them and prints the PDF with headless Chromium.</p>
+<h2 id="evidence-index">Evidence index</h2>
+<x-index></x-index>
+</section>
+
+</body>
+</html>

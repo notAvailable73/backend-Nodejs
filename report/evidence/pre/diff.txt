@@ -1,0 +1,39 @@
+[1mdiff --git a/src/controllers/auth.controller.js b/src/controllers/auth.controller.js[m
+[1mindex c1e745a..cfd7af2 100644[m
+[1m--- a/src/controllers/auth.controller.js[m
+[1m+++ b/src/controllers/auth.controller.js[m
+[36m@@ -4,7 +4,6 @@[m [mimport { ApiError } from "../utils/ApiError.js";[m
+ import { User } from "../models/user.model.js";[m
+ [m
+ const registerUser = asyncHandler(async (req, res) => {[m
+[31m-    console.log(req.body);[m
+     const { name, email, password } = req.body;[m
+ [m
+     if ([name, email, password].some(field => field?.trim() === "")) {[m
+[36m@@ -48,7 +47,6 @@[m [mconst loginUser = asyncHandler(async (req, res) => {[m
+             secure: true,[m
+             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days[m
+         });[m
+[31m-        console.log("Sending response:", JSON.stringify({ user, token }, null, 2));[m
+         return new ApiResponse(200, { user, token }, "Login successful").send(res);[m
+         [m
+     } catch (error) {[m
+[1mdiff --git a/src/models/user.model.js b/src/models/user.model.js[m
+[1mindex ad2475f..0417f77 100644[m
+[1m--- a/src/models/user.model.js[m
+[1m+++ b/src/models/user.model.js[m
+[36m@@ -33,6 +33,14 @@[m [mconst userSchema = new mongoose.Schema({[m
+     timestamps: true[m
+ });[m
+ [m
+[32m+[m[32m// Never serialize the password hash, whichever route returns a user[m
+[32m+[m[32muserSchema.set("toJSON", {[m
+[32m+[m[32m    transform: (doc, ret) => {[m
+[32m+[m[32m        delete ret.password;[m
+[32m+[m[32m        return ret;[m
+[32m+[m[32m    },[m
+[32m+[m[32m});[m
+[32m+[m
+ // Hash password before saving user[m
+ userSchema.pre("save", async function (next) {[m
+     if (!this.isModified("password")) return next();[m

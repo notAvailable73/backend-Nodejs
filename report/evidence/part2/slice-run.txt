@@ -1,0 +1,5 @@
+[0m[7m[1m[32m PASS [39m[22m[27m[0m [2mtests/[22m[1mquestions.test.js[22m
+[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 total
+[1mTests:       [22m[1m[33m9 skipped[39m[22m, [1m[32m1 passed[39m[22m, 10 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0.799 s, estimated 1 s

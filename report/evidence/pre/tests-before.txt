@@ -1,0 +1,112 @@
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mtests/[22m[1mauth.test.js[22m
+  POST /api/auth/register
+    [33m○[39m [2mskipped creates a user and returns a JWT[22m
+    [33m○[39m [2mskipped stores the password hashed[22m
+    [33m○[39m [2mskipped rejects a duplicate email with 400[22m
+  credential exposure
+    [31m✕[39m [2mregistration does not return the password hash (138 ms)[22m
+    [31m✕[39m [2mlogin does not return the password hash (145 ms)[22m
+    [31m✕[39m [2mregistration does not log the plaintext password (71 ms)[22m
+    [31m✕[39m [2mlogin does not log the token or the password hash (138 ms)[22m
+  POST /api/auth/login
+    [33m○[39m [2mskipped returns a JWT and sets it as an HTTP-only cookie[22m
+    [33m○[39m [2mskipped rejects a wrong password with 401[22m
+    [33m○[39m [2mskipped rejects an unknown email with 401[22m
+  GET /api/auth/profile
+    [33m○[39m [2mskipped returns the logged-in user without the password[22m
+    [33m○[39m [2mskipped rejects a request without a token with 401[22m
+    [33m○[39m [2mskipped rejects a malformed token with 401[22m
+    [33m○[39m [2mskipped rejects a signed with another secret token with 401[22m
+    [33m○[39m [2mskipped rejects a expired token with 401[22m
+  POST /api/auth/logout
+    [33m○[39m [2mskipped clears the token cookie[22m
+
+[1m[31m  [1m● [22m[1mcredential exposure › registration does not return the password hash[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoHaveProperty[2m([22m[32mpath[39m[2m)[22m
+
+    Expected path: not [32m"password"[39m
+
+    Received value: [31m"$2b$10$HB/zFdOFs11oKZmfZOGwQebknVj3QKA/ljb3DS.6nwLTo1qCj83pW"[39m
+
+[2m    [0m [90m 64 |[39m         [36mconst[39m res [33m=[39m [36mawait[39m register()[33m;[39m[22m
+[2m     [90m 65 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 66 |[39m         expect(res[33m.[39mbody[33m.[39mdata[33m.[39muser)[33m.[39mnot[33m.[39mtoHaveProperty([32m"password"[39m)[33m;[39m[22m
+[2m     [90m    |[39m                                        [31m[1m^[22m[2m[39m[22m
+[2m     [90m 67 |[39m     })[33m;[39m[22m
+[2m     [90m 68 |[39m[22m
+[2m     [90m 69 |[39m     test([32m"login does not return the password hash"[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/auth.test.js[39m[0m[2m:66:40)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mcredential exposure › login does not return the password hash[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoHaveProperty[2m([22m[32mpath[39m[2m)[22m
+
+    Expected path: not [32m"password"[39m
+
+    Received value: [31m"$2b$10$K4OKsEFog01bzN.AX4CuZe1XzKpTTCYCanW.tzdYR2ktC.i9Z74LO"[39m
+
+[2m    [0m [90m 71 |[39m         [36mconst[39m res [33m=[39m [36mawait[39m login()[33m;[39m[22m
+[2m     [90m 72 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 73 |[39m         expect(res[33m.[39mbody[33m.[39mdata[33m.[39muser)[33m.[39mnot[33m.[39mtoHaveProperty([32m"password"[39m)[33m;[39m[22m
+[2m     [90m    |[39m                                        [31m[1m^[22m[2m[39m[22m
+[2m     [90m 74 |[39m     })[33m;[39m[22m
+[2m     [90m 75 |[39m[22m
+[2m     [90m 76 |[39m     test([32m"registration does not log the plaintext password"[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/auth.test.js[39m[0m[2m:73:40)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mcredential exposure › registration does not log the plaintext password[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: not [32m"secret123"[39m
+    Received string:        [31m"{\"name\":\"Test User\",\"email\":\"test@example.com\",\"password\":\"[7msecret123[27m\"}"[39m
+
+[2m    [0m [90m 77 |[39m         [36mawait[39m register()[33m;[39m[22m
+[2m     [90m 78 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 79 |[39m         expect(logged[33m.[39mjoin([32m"\n"[39m))[33m.[39mnot[33m.[39mtoContain(user[33m.[39mpassword)[33m;[39m[22m
+[2m     [90m    |[39m                                       [31m[1m^[22m[2m[39m[22m
+[2m     [90m 80 |[39m     })[33m;[39m[22m
+[2m     [90m 81 |[39m[22m
+[2m     [90m 82 |[39m     test([32m"login does not log the token or the password hash"[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/auth.test.js[39m[0m[2m:79:39)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mcredential exposure › login does not log the token or the password hash[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mnot[2m.[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: not [32m"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQ1YWFiNDMyN2FiZThmNTZkNyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTgxLCJleHAiOjE3OTM2MjMzODF9.9bgC4Lb3Rc5F2mmcG4P1KURXR7s_GLlJuEVY2smhJQ8"[39m
+    Received string:        [31m"{\"name\":\"Test User\",\"email\":\"test@example.com\",\"password\":\"secret123\"}[39m
+    [31mtest@example.com[39m
+    [31mSending response: {[39m
+    [31m  \"user\": {[39m
+    [31m    \"_id\": \"6adf4ad5aab4327abe8f56d7\",[39m
+    [31m    \"name\": \"Test User\",[39m
+    [31m    \"email\": \"test@example.com\",[39m
+    [31m    \"password\": \"$2b$10$ZthYzZxzydR.yq0MWclXm.67menmhGbbFeNOs1Q5DgLV4xOQ/vPfu\",[39m
+    [31m    \"role\": \"user\",[39m
+    [31m    \"askedQuestions\": [],[39m
+    [31m    \"createdAt\": \"2026-10-26T12:43:01.242Z\",[39m
+    [31m    \"updatedAt\": \"2026-10-26T12:43:01.242Z\",[39m
+    [31m    \"__v\": 0[39m
+    [31m  },[39m
+    [31m  \"token\": \"[7meyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZGY0YWQ1YWFiNDMyN2FiZThmNTZkNyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzkzMDE4NTgxLCJleHAiOjE3OTM2MjMzODF9.9bgC4Lb3Rc5F2mmcG4P1KURXR7s_GLlJuEVY2smhJQ8[27m\"[39m
+    [31m}"[39m
+
+[2m    [0m [90m 85 |[39m[22m
+[2m     [90m 86 |[39m         [36mconst[39m output [33m=[39m logged[33m.[39mjoin([32m"\n"[39m)[33m;[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 87 |[39m         expect(output)[33m.[39mnot[33m.[39mtoContain(res[33m.[39mbody[33m.[39mdata[33m.[39mtoken)[33m;[39m[22m
+[2m     [90m    |[39m                            [31m[1m^[22m[2m[39m[22m
+[2m     [90m 88 |[39m         expect(output)[33m.[39mnot[33m.[39mtoMatch([35m/\$2[aby]\$10\$/[39m)[33m;[39m[22m
+[2m     [90m 89 |[39m     })[33m;[39m[22m
+[2m     [90m 90 |[39m })[33m;[39m[0m[22m
+
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mtests/auth.test.js[39m[0m[2m:87:28)[22m[2m[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 total
+[1mTests:       [22m[1m[31m4 failed[39m[22m, [1m[33m12 skipped[39m[22m, 16 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0.936 s, estimated 2 s

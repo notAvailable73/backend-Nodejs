@@ -1,0 +1,497 @@
+{
+  "setup/env": {
+    "command": "uname -sr\nnode --version && npm --version\ndocker --version\ndocker exec jamiya-mongo mongod --version | head -1",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:24.420Z"
+  },
+  "setup/npm-ci": {
+    "command": "npm ci",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:28.856Z"
+  },
+  "setup/history": {
+    "command": "git log --format='%h %ad %s' --date=short   # at tag baseline",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:28.892Z"
+  },
+  "setup/structure": {
+    "command": "git ls-tree -r --name-only baseline   # drawn as a tree",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": null,
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:28.907Z"
+  },
+  "setup/mongo8-kernel": {
+    "command": "docker run --rm mongo:8.0.34",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": "only the fatal log line is kept",
+    "capturedAt": "2026-10-26T12:42:30.501Z"
+  },
+  "setup/src-unchanged": {
+    "command": "git diff --stat baseline lab-setup -- src",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:30.512Z"
+  },
+  "setup/tests": {
+    "command": "npm test -- --verbose",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:34.213Z"
+  },
+  "cor/demo-before": {
+    "command": "report/demos/auth-requests.sh",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:38.103Z"
+  },
+  "cor/demo-after": {
+    "command": "report/demos/auth-requests.sh",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:40.909Z"
+  },
+  "cor/diff": {
+    "command": "git diff lab-setup cm-cor-01 -- src",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:40.914Z"
+  },
+  "cor/tests": {
+    "command": "npm test -- --verbose tests/auth.test.js -t 'GET /api/auth/profile'",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:41.925Z"
+  },
+  "ada/boot-before": {
+    "command": "report/demos/boot.sh",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:42.568Z"
+  },
+  "ada/boot-after": {
+    "command": "report/demos/boot.sh",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:50.881Z"
+  },
+  "ada/deps-before": {
+    "command": "npm ls buffer-equal-constant-time",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:51.313Z"
+  },
+  "ada/deps-after": {
+    "command": "npm ls buffer-equal-constant-time",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:51.745Z"
+  },
+  "ada/slowbuffer": {
+    "command": "grep -n SlowBuffer node_modules/buffer-equal-constant-time/index.js",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:51.753Z"
+  },
+  "ada/jwa": {
+    "command": "grep -n -A9 '^var timingSafeEqual' node_modules/jwa/index.js",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:51.760Z"
+  },
+  "ada/diff": {
+    "command": "git diff cm-cor-01 cm-ada-01 -- package.json .nvmrc\ngit diff --stat cm-cor-01 cm-ada-01",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:51.770Z"
+  },
+  "ada/tests-node26": {
+    "command": "node --version && npm test",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:53.958Z"
+  },
+  "ada/tests-node24": {
+    "command": "node --version && npm test",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:56.135Z"
+  },
+  "pre/demo-before": {
+    "command": "report/demos/credentials.sh",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:42:57.221Z"
+  },
+  "pre/demo-after": {
+    "command": "report/demos/credentials.sh",
+    "ref": "cm-pre-01",
+    "commit": "b9a02ac",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:00.203Z"
+  },
+  "pre/tests-before": {
+    "command": "npm test -- --silent --verbose tests/auth.test.js -t 'credential exposure'",
+    "ref": "cm-pre-01",
+    "commit": "b9a02ac",
+    "node": "26.10.0",
+    "exitCode": 1,
+    "note": "tests from cm-pre-01, application source (src/) from cm-ada-01",
+    "capturedAt": "2026-10-26T12:43:01.532Z"
+  },
+  "pre/tests-after": {
+    "command": "npm test -- --verbose tests/auth.test.js -t 'credential exposure'",
+    "ref": "cm-pre-01",
+    "commit": "b9a02ac",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:02.836Z"
+  },
+  "pre/diff": {
+    "command": "git diff cm-ada-01 cm-pre-01 -- src",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:02.841Z"
+  },
+  "per/jscpd-before": {
+    "command": "jscpd --min-lines 5 --min-tokens 30 src",
+    "ref": "cm-pre-01",
+    "commit": "b9a02ac",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:02.915Z"
+  },
+  "per/jscpd-after": {
+    "command": "jscpd --min-lines 5 --min-tokens 30 src",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:04.865Z"
+  },
+  "per/tests-before": {
+    "command": "npm test -- --silent",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 1,
+    "note": "tests from cm-per-01, application source (src/) from cm-pre-01",
+    "capturedAt": "2026-10-26T12:43:07.377Z"
+  },
+  "per/tests-after": {
+    "command": "npm test",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:09.921Z"
+  },
+  "per/diff": {
+    "command": "git diff -w cm-pre-01 cm-per-01 -- src",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:09.926Z"
+  },
+  "per/diff-stat": {
+    "command": "git diff --stat cm-pre-01 cm-per-01 -- src",
+    "ref": null,
+    "commit": null,
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:09.930Z"
+  },
+  "tests/lab-setup": {
+    "command": "node --version && npm test",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:13.621Z"
+  },
+  "tests/cm-cor-01": {
+    "command": "node --version && npm test",
+    "ref": "cm-cor-01",
+    "commit": "fa4b34b",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:15.811Z"
+  },
+  "tests/cm-ada-01": {
+    "command": "node --version && npm test",
+    "ref": "cm-ada-01",
+    "commit": "93ffde1",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:18.006Z"
+  },
+  "tests/cm-pre-01": {
+    "command": "node --version && npm test",
+    "ref": "cm-pre-01",
+    "commit": "b9a02ac",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:20.454Z"
+  },
+  "tests/cm-per-01": {
+    "command": "node --version && npm test",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.011Z"
+  },
+  "part2/ast-dump": {
+    "command": "node report/tools/ast.mjs dump src/middlewares/auth.middleware.js 6",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.075Z"
+  },
+  "part2/ast-outline": {
+    "command": "node report/tools/ast.mjs outline src/middlewares/auth.middleware.js isAuthenticated",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.133Z"
+  },
+  "part2/ast-stats-baseline": {
+    "command": "node report/tools/ast.mjs stats src",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.210Z"
+  },
+  "part2/ast-stats-final": {
+    "command": "node report/tools/ast.mjs stats src",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.288Z"
+  },
+  "part2/metrics-baseline": {
+    "command": "node report/tools/metrics.mjs src",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.362Z"
+  },
+  "part2/eslint-baseline": {
+    "command": "eslint --config report/eslint.config.js src",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": "26.10.0",
+    "exitCode": 1,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:23.707Z"
+  },
+  "part2/metrics-final": {
+    "command": "node report/tools/metrics.mjs src",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:24.058Z"
+  },
+  "part2/eslint-final": {
+    "command": "eslint --config report/eslint.config.js src",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 1,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:24.405Z"
+  },
+  "part2/coverage-baseline": {
+    "command": "npm test -- --coverage --coverageProvider=v8 --collectCoverageFrom='src/**/*.js'",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "24.21.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:29.123Z"
+  },
+  "part2/coverage-final": {
+    "command": "npm test -- --coverage --coverageProvider=v8 --collectCoverageFrom='src/**/*.js'",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:32.541Z"
+  },
+  "part2/slice-static": {
+    "command": "node report/tools/slice.mjs src/controllers/question.controller.js getQuestions 47 --var query",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:32.603Z"
+  },
+  "part2/slice-run": {
+    "command": "npm test -- tests/questions.test.js -t 'searches titles' --coverage --coverageReporters=json --collectCoverageFrom=src/controllers/question.controller.js",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:33.782Z"
+  },
+  "part2/slice-dynamic": {
+    "command": "node report/tools/slice.mjs src/controllers/question.controller.js getQuestions 47 --var query --coverage coverage/coverage-final.json",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:33.845Z"
+  },
+  "part2/trace": {
+    "command": "node report/tools/workload.mjs . --trace",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:34.421Z"
+  },
+  "part2/profile": {
+    "command": "node --cpu-prof report/tools/workload.mjs . --iterations 30\nnode report/tools/profile.mjs workload.cpuprofile --svg icicle.svg",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:37.327Z"
+  },
+  "part2/jscpd-baseline": {
+    "command": "jscpd --min-lines 5 --min-tokens 30 src",
+    "ref": "baseline",
+    "commit": "dfe8310",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:37.371Z"
+  },
+  "part2/jscpd-final": {
+    "command": "jscpd --min-lines 5 --min-tokens 30 src",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:37.449Z"
+  },
+  "part2/audit-baseline": {
+    "command": "npm audit --omit=dev",
+    "ref": "lab-setup",
+    "commit": "48c5b89",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:38.739Z"
+  },
+  "part2/audit-final": {
+    "command": "npm audit --omit=dev",
+    "ref": "cm-per-01",
+    "commit": "b11cba5",
+    "node": "26.10.0",
+    "exitCode": 0,
+    "note": null,
+    "capturedAt": "2026-10-26T12:43:40.923Z"
+  }
+}
