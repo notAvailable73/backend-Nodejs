@@ -82,4 +82,4 @@ Each can be run by hand from the repository root:
 | `node --cpu-prof tools/workload.mjs <checkout>` then `tools/profile.mjs <file.cpuprofile> --svg out.svg` | CPU profile summary and icicle chart |
 | `demos/*.sh` | live-server demonstrations (run inside a checkout with `PORT`, `MONGODB_URI`, `JWT_SECRET` set) |
 
-`GUIDE.md` explains the content of the report in plain words.
+`VIVA.md` explains the whole report in plain words: why each change is in its category, how it was solved, unsolved problems, and likely viva questions.

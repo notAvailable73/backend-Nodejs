@@ -40,4 +40,4 @@ The `baseline` tag marks the project as it was before the maintenance work.
 
 `report/` holds the CSE 4802 maintenance lab report and everything needed to
 regenerate it (`npm run report`). See `report/README.md` for how it is built
-and `report/GUIDE.md` for a walkthrough of its content.
+and `report/VIVA.md` for a full explanation for the viva.
